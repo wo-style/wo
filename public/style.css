@@ -1,0 +1,222 @@
+@charset "UTF-8";
+
+@font-face {
+    font-family: "Noto Sans JP";
+    src: url("./fonts/NotoSansJP-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Noto Sans JP";
+    src: url("./fonts/NotoSansJP-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    list-style-type: none;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: 1;
+}
+
+html {
+    height: 100%;
+    font-size: 14px;
+}
+
+body {
+    height: 100%;
+    font-family: "Noto Sans JP", sans-serif;
+    font-size: 1rem;
+    overflow: hidden;
+}
+
+input[type="text"] {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+}
+
+#loading {
+    padding: 4px;
+}
+
+#app {
+    visibility: hidden;
+    height: 100%;
+    padding: 4px;
+}
+
+header {
+    height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+dl {
+    font-size: 0.9rem;
+}
+
+dt {
+    display: inline-block;
+    border: 1px solid black;
+    border-radius: 2px;
+    padding: 4px;
+    vertical-align: middle;
+    min-width: 24px;
+    text-align: center;
+}
+
+dd {
+    display: inline-block;
+    margin-left: 4px;
+    margin-right: 15px;
+    vertical-align: middle;
+}
+
+nav {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+nav > h2 {
+    flex: 1;
+    text-align: center;
+    align-self: normal;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+nav > h2 + h2 {
+    border-left: none;
+}
+
+nav > h2[id*="sentence"],
+nav > h2[id*="generate"] {
+    flex: 2;
+}
+
+nav > h2.selected {
+    background-color: black;
+    color: white;
+}
+
+main {
+    height: calc(100% - 170px);
+    display: flex;
+    border-bottom: 1px solid black;
+}
+
+main > ul {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    overflow-y: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+main > ul::-webkit-scrollbar {
+    display: none;
+}
+
+main > ul[id*="sentence"],
+main > ul[id*="generate"] {
+    flex: 2;
+}
+
+main > ul + ul {
+    border-left: none;
+}
+
+main > ul > li {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px;
+}
+
+main > ul > li.selected {
+    font-weight: 700;
+    color: green;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 70px;
+    gap: 5px;
+}
+
+footer a {
+    vertical-align: middle;
+}
+
+.deleted {
+    opacity: 0.3;
+}
+
+.rs {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.8);
+    font-size: 1.5rem;
+}
+
+.rs h2 {
+    margin-bottom: 25px;
+}
+.rs dl {
+    margin-top: 25px;
+}
+
+.rs dt {
+    border-color: white;
+}
+
+.rs input[type="text"] {
+    width: 250px;
+    color: black;
+    background-color: white;
+    padding: 8px;
+    margin: 0 4px;
+    height: 40px;
+    line-height: 40px;
+}

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="./style.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="ようこそ「を研究所」へ。底が計り知れない「を」の世界へ飛び込もう。" />
+        <title>を研究所</title>
+    </head>
+    <body>
+        <p id="loading">Now Loading...</p>
+        <div id="app">
+            <header>
+                <h1>を研究所</h1>
+                <div id="keys">
+                    <dl id="sentence_example-key">
+                        <dt>SPACE</dt>
+                        <dd>ランダムで例文を取得</dd>
+                        <dt>Q</dt>
+                        <dd>例文を検索</dd>
+                        <dt>↑</dt>
+                        <dd>名詞を保存</dd>
+                        <dt>SHIFT + ↑</dt>
+                        <dd>動詞を保存</dd>
+                    </dl>
+                    <dl id="noun_favorite-key">
+                        <dt>SPACE</dt>
+                        <dd>更新</dd>
+                        <dt>ENTER</dt>
+                        <dd>選択中の名詞と動詞全部で作文</dd>
+                        <dt>↓</dt>
+                        <dd>名詞から削除</dd>
+                        <dt>↑</dt>
+                        <dd>名詞を再保存</dd>
+                    </dl>
+                    <dl id="verb_favorite-key">
+                        <dt>SPACE</dt>
+                        <dd>更新</dd>
+                        <dt>ENTER</dt>
+                        <dd>選択中の動詞と名詞全部で作文</dd>
+                        <dt>↓</dt>
+                        <dd>動詞から削除</dd>
+                        <dt>↑</dt>
+                        <dd>動詞を再保存</dd>
+                    </dl>
+                    <dl id="generate-key">
+                        <dt>SPACE</dt>
+                        <dd>名詞と動詞からランダムで作文</dd>
+                        <dt>SHIFT + SPACE</dt>
+                        <dd>例文からランダムで作文</dd>
+                        <dt>↑</dt>
+                        <dd>お気に入りに保存</dd>
+                    </dl>
+                    <dl id="sentence_favorite-key">
+                        <dt>SPACE</dt>
+                        <dd>更新</dd>
+                        <dt>↓</dt>
+                        <dd>お気に入りから削除</dd>
+                        <dt>↑</dt>
+                        <dd>お気に入りに再保存</dd>
+                    </dl>
+                    <dl>
+                        <dt>W</dt>
+                        <dt>S</dt>
+                        <dd>アイテム選択</dd>
+                        <dt>A</dt>
+                        <dt>D</dt>
+                        <dd>リスト切り替え</dd>
+                        <dt>R</dt>
+                        <dd>登録モード</dd>
+                    </dl>
+                </div>
+            </header>
+            <nav>
+                <h2 id="sentence_example-title">例文（2788374）</h2>
+                <h2 id="noun_favorite-title">名詞</h2>
+                <h2 id="verb_favorite-title">動詞</h2>
+                <h2 id="generate-title">作文</h2>
+                <h2 id="sentence_favorite-title">お気に入り</h2>
+            </nav>
+            <main>
+                <ul id="sentence_example-list"></ul>
+                <ul id="noun_favorite-list"></ul>
+                <ul id="verb_favorite-list"></ul>
+                <ul id="generate-list"></ul>
+                <ul id="sentence_favorite-list"></ul>
+            </main>
+            <footer>
+                <p>&copy;を研究所</p>
+                <div>
+                    <a href="https://github.com/idutsu/wo" target="_blank"
+                        ><img src="./images/GitHub_Invertocat_Black_Clearspace.png" width="24px" height="auto"
+                    /></a>
+                    <a href="https://discord.gg/kE9F7p9T5T" target="_blank"
+                        ><img src="./images/Discord-Symbol-Black.png" width="24px" height="auto"
+                    /></a>
+                </div>
+            </footer>
+            <div id="register" class="rs">
+                <h2>名詞/動詞/文を登録する</h2>
+                <div>
+                    <input type="text" id="inputNoun" placeholder="名詞" />
+                    <span> を </span>
+                    <input type="text" id="inputVerb" placeholder="動詞" />
+                </div>
+                <dl>
+                    <dt class="hide-is-input">↑</dt>
+                    <dd class="hide-is-input">保存</dd>
+                    <dt class="hide-is-input">R</dt>
+                    <dd class="hide-is-input">終了</dd>
+                    <dt>Enter</dt>
+                    <dd>入力を切り替える</dd>
+                </dl>
+            </div>
+            <div id="search" class="rs">
+                <h2>例文を検索する</h2>
+                <div>
+                    <input type="text" id="inputSearch" placeholder="" />
+                </div>
+                <dl>
+                    <dt class="hide-is-input">↑</dt>
+                    <dd class="hide-is-input">検索</dd>
+                    <dt class="hide-is-input">Q</dt>
+                    <dd class="hide-is-input">終了</dd>
+                    <dt>Enter</dt>
+                    <dd id="switchFocusCaption">入力する</dd>
+                </dl>
+            </div>
+        </div>
+        <script type="module" src="/main.js"></script>
+    </body>
+</html>
