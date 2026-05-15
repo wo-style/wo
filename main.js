@@ -498,7 +498,7 @@
             x: (e) => {
                 const nounFavoriteItems = STATE[MODE.NOUN_FAVORITE].items;
                 const verbFavoriteItems = STATE[MODE.VERB_FAVORITE].items;
-                if (!nounFavoriteItems || !verbFavoriteItems) return;
+                if (nounFavoriteItems.length === 0 || verbFavoriteItems.length === 0) return;
                 postMessageWithFlag({ action: "generateSentences" });
             },
             c: (e) => {
