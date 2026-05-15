@@ -52,7 +52,7 @@
         [MODE.SENTENCE_EXAMPLE]: { name: "例文", items: [], index: 0, offset: 0 },
         [MODE.NOUN_FAVORITE]: { name: "名詞", items: [], index: 0, offset: 0 },
         [MODE.VERB_FAVORITE]: { name: "動詞", items: [], index: 0, offset: 0 },
-        [MODE.SENTENCE_FAVORITE]: { name: "お気に入り", items: [], index: 0, offset: 0 },
+        [MODE.SENTENCE_FAVORITE]: { name: "名文", items: [], index: 0, offset: 0 },
         [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0 },
     };
 
