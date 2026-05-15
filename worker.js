@@ -107,8 +107,6 @@ const dbMethods = {
     },
 };
 
-let dbInstance;
-
 const makeOpfs = async (root, filename) => {
     console.log("データベースをダウンロードします...");
     await root.removeEntry(filename).catch(() => null);
@@ -190,6 +188,8 @@ const restoreFavorites = (db, backup) => {
         console.error("お気に入りデータの復元に失敗しました:", e);
     }
 };
+
+let dbInstance;
 
 const start = async (sqlite3) => {
     const filename = "wo.db";

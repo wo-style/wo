@@ -543,8 +543,10 @@
                 e.preventDefault();
                 hideSearchArea();
             } else if (e.key === "ArrowUp") {
+                const word = getInputSearchValue();
+                if (word === "") return;
                 e.preventDefault();
-                postMessageWithFlag({ action: "searchSentences", payload: { word: getInputSearchValue() } });
+                postMessageWithFlag({ action: "searchSentences", payload: { word } });
                 exitSearchArea();
             }
             return;
