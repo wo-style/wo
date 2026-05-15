@@ -1,5 +1,7 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
+const CURRENT_DB_VERSION = 5;
+
 const dbMethods = {
     init: (db, { limit } = {}) => {
         return {
@@ -107,6 +109,88 @@ const dbMethods = {
 
 let dbInstance;
 
+const makeOpfs = async (root, filename) => {
+    console.log("データベースをダウンロードします...");
+    await root.removeEntry(filename).catch(() => null);
+    const DB_URL = "https://db.wo.style/wo.db";
+    const response = await fetch(DB_URL, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(`データベースのダウンロードに失敗しました： ${response.status}`);
+    }
+    const contentLength = +response.headers.get("Content-Length");
+    const reader = response.body.getReader();
+    const fileHandle = await root.getFileHandle(filename, { create: true });
+    const accessHandle = await fileHandle.createSyncAccessHandle();
+    try {
+        accessHandle.truncate(0);
+        let receivedLength = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            accessHandle.write(value);
+            receivedLength += value.length;
+            if (contentLength) {
+                const percentage = Math.round((receivedLength / contentLength) * 100);
+                postMessage({ type: "download_progress", result: percentage });
+            }
+        }
+        accessHandle.flush();
+        console.log("データベースのダウンロードに成功しました");
+        console.log("データベースをOPFSに保存しました");
+    } finally {
+        accessHandle.close();
+    }
+};
+
+const backupFavorites = (db) => {
+    console.log("お気に入りデータを退避します...");
+    return {
+        nouns: db.selectArrays("SELECT word FROM noun"),
+        verbs: db.selectArrays("SELECT word FROM verb"),
+        sentences: db.selectArrays("SELECT noun, verb FROM sentence"),
+    };
+};
+
+const restoreFavorites = (db, backup) => {
+    console.log("お気に入りデータを復元します...");
+    db.exec("BEGIN TRANSACTION;");
+    try {
+        db.exec("DELETE FROM noun;");
+        db.exec("DELETE FROM verb;");
+        db.exec("DELETE FROM sentence;");
+
+        const insertNoun = db.prepare("INSERT OR IGNORE INTO noun (word) VALUES (?)");
+        backup.nouns.forEach((row) => {
+            insertNoun.bind([row[0]]);
+            insertNoun.step();
+            insertNoun.reset();
+        });
+        insertNoun.finalize();
+
+        const insertVerb = db.prepare("INSERT OR IGNORE INTO verb (word) VALUES (?)");
+        backup.verbs.forEach((row) => {
+            insertVerb.bind([row[0]]);
+            insertVerb.step();
+            insertVerb.reset();
+        });
+        insertVerb.finalize();
+
+        const insertSentence = db.prepare("INSERT OR IGNORE INTO sentence (noun, verb) VALUES (?, ?)");
+        backup.sentences.forEach((row) => {
+            insertSentence.bind([row[0], row[1]]);
+            insertSentence.step();
+            insertSentence.reset();
+        });
+        insertSentence.finalize();
+
+        db.exec("COMMIT;");
+        console.log("お気に入りデータの復元に成功しました");
+    } catch (e) {
+        db.exec("ROLLBACK;");
+        console.error("お気に入りデータの復元に失敗しました:", e);
+    }
+};
+
 const start = async (sqlite3) => {
     const filename = "wo.db";
     try {
@@ -114,39 +198,37 @@ const start = async (sqlite3) => {
         console.log("OPFSのデータベースを確認します...");
         const fileHandle = await root.getFileHandle(filename).catch(() => null);
         if (!fileHandle) {
-            await root.removeEntry(filename).catch(() => null);
             console.log("OPFSにデータベースは存在しませんでした");
-            console.log("データベースをダウンロードします...");
-            const DB_URL = "https://db.wo.style/wo.db";
-            const response = await fetch(DB_URL, { cache: "no-store" });
-            if (!response.ok) {
-                throw new Error(`データベースのダウンロードに失敗しました： ${response.status}`);
-            }
-            const contentLength = +response.headers.get("Content-Length");
-            const reader = response.body.getReader();
-            const fileHandle = await root.getFileHandle(filename, { create: true });
-            const accessHandle = await fileHandle.createSyncAccessHandle();
-            try {
-                accessHandle.truncate(0);
-                let receivedLength = 0;
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    accessHandle.write(value);
-                    receivedLength += value.length;
-                    if (contentLength) {
-                        const percentage = Math.round((receivedLength / contentLength) * 100);
-                        postMessage({ type: "download_progress", result: percentage });
-                    }
-                }
-                accessHandle.flush();
-                console.log("データベースのダウンロードに成功しました");
-                console.log("データベースをOPFSに保存しました");
-            } finally {
-                accessHandle.close();
+            await makeOpfs(root, filename);
+        } else {
+            const tempDb = new sqlite3.oo1.OpfsDb("/" + filename);
+            const userVersion = tempDb.selectValue("PRAGMA user_version");
+            console.log(`データベースのバージョンは ${userVersion} です`);
+
+            tempDb.close();
+
+            if (userVersion < CURRENT_DB_VERSION) {
+                console.log(`データベースを ${CURRENT_DB_VERSION} にバージョンアップします...`);
+                const oldDb = new sqlite3.oo1.OpfsDb("/" + filename);
+                const backupData = backupFavorites(oldDb);
+                oldDb.close();
+
+                await makeOpfs(root, filename);
+
+                const newDb = new sqlite3.oo1.OpfsDb("/" + filename);
+                restoreFavorites(newDb, backupData);
+                newDb.close();
             }
         }
+
         dbInstance = new sqlite3.oo1.OpfsDb("/" + filename);
+
+        const currentVersion = dbInstance.selectValue("PRAGMA user_version");
+        if (currentVersion < CURRENT_DB_VERSION) {
+            dbInstance.exec(`PRAGMA user_version = ${CURRENT_DB_VERSION};`);
+            console.log(`データベースのバージョンを ${CURRENT_DB_VERSION} に設定しました`);
+        }
+
         console.log("OPFSに接続しました");
         postMessage({ type: "ready" });
     } catch (err) {
