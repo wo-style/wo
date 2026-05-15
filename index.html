@@ -17,10 +17,10 @@
                         <dt>SPACE</dt>
                         <dd>例文をランダムで取得</dd>
                         <dt>Q</dt>
-                        <dd>例文を検索</dd>
-                        <dt>↑</dt>
+                        <dd>例文を検索する</dd>
+                        <dt>F</dt>
                         <dd>名詞を保存</dd>
-                        <dt>SHIFT + ↑</dt>
+                        <dt>SHIFT + F</dt>
                         <dd>動詞を保存</dd>
                     </dl>
                     <dl id="noun_favorite-key">
@@ -28,44 +28,38 @@
                         <dd>更新</dd>
                         <dt>ENTER</dt>
                         <dd>選択中の名詞と動詞全部で作文</dd>
-                        <dt>↓</dt>
-                        <dd>名詞から削除</dd>
-                        <dt>↑</dt>
-                        <dd>名詞を再保存</dd>
+                        <dt>F</dt>
+                        <dd>削除/保存</dd>
                     </dl>
                     <dl id="verb_favorite-key">
                         <dt>SPACE</dt>
                         <dd>更新</dd>
-                        <dt>ENTER</dt>
-                        <dd>選択中の動詞と名詞全部で作文</dd>
-                        <dt>↓</dt>
-                        <dd>動詞から削除</dd>
-                        <dt>↑</dt>
-                        <dd>動詞を再保存</dd>
+                        <dt>F</dt>
+                        <dd>削除/保存</dd>
                     </dl>
                     <dl id="generate-key">
-                        <dt>SPACE</dt>
-                        <dd>名詞と動詞からランダムで作文</dd>
-                        <dt>SHIFT + SPACE</dt>
-                        <dd>例文からランダムで作文</dd>
-                        <dt>↑</dt>
-                        <dd>お気に入りに保存</dd>
+                        <dt>Z</dt>
+                        <dd>例文の名詞と動詞で作文</dd>
+                        <dt>X</dt>
+                        <dd>名詞と動詞で作文</dd>
+                        <dt>C</dt>
+                        <dd>選択中の名詞と動詞で作文</dd>
+                        <dt>V</dt>
+                        <dd>選択中の動詞と名詞で作文</dd>
                     </dl>
                     <dl id="sentence_favorite-key">
                         <dt>SPACE</dt>
                         <dd>更新</dd>
-                        <dt>↓</dt>
-                        <dd>お気に入りから削除</dd>
-                        <dt>↑</dt>
-                        <dd>お気に入りに再保存</dd>
+                        <dt>F</dt>
+                        <dd>削除/保存</dd>
                     </dl>
                     <dl>
                         <dt>W</dt>
                         <dt>S</dt>
-                        <dd>アイテム選択</dd>
+                        <dd>ワード選択</dd>
                         <dt>A</dt>
                         <dt>D</dt>
-                        <dd>リスト切り替え</dd>
+                        <dd>モード切替</dd>
                         <dt>R</dt>
                         <dd>登録モード</dd>
                     </dl>
@@ -73,10 +67,10 @@
             </header>
             <nav>
                 <h2 id="sentence_example-title">例文（2788374）</h2>
-                <h2 id="noun_favorite-title">★名詞</h2>
-                <h2 id="verb_favorite-title">★動詞</h2>
+                <h2 id="noun_favorite-title">名詞</h2>
+                <h2 id="verb_favorite-title">動詞</h2>
                 <h2 id="generate-title">作文</h2>
-                <h2 id="sentence_favorite-title">★文</h2>
+                <h2 id="sentence_favorite-title">名文</h2>
             </nav>
             <main>
                 <ul id="sentence_example-list"></ul>
@@ -88,7 +82,7 @@
             <footer>
                 <p>&copy;を研究所</p>
                 <div>
-                    <a href="https://github.com//wo" target="_blank"
+                    <a href="https://github.com/wo-style/wo.git" target="_blank"
                         ><img src="./images/GitHub_Invertocat_Black_Clearspace.png" width="24px" height="auto"
                     /></a>
                     <a href="https://discord.gg/kE9F7p9T5T" target="_blank"
@@ -96,7 +90,7 @@
                     /></a>
                 </div>
             </footer>
-            <div id="register" class="rs">
+            <div id="register" class="input-area">
                 <h2>名詞/動詞/文を登録する</h2>
                 <div>
                     <input type="text" id="inputNoun" placeholder="名詞" />
@@ -112,7 +106,7 @@
                     <dd>入力を切り替える</dd>
                 </dl>
             </div>
-            <div id="search" class="rs">
+            <div id="search" class="input-area">
                 <h2>例文を検索する</h2>
                 <div>
                     <input type="text" id="inputSearch" placeholder="" />

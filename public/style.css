@@ -23,6 +23,9 @@
     font-size: inherit;
     font-weight: inherit;
     line-height: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 html {
@@ -34,7 +37,6 @@ body {
     height: 100%;
     font-family: "Noto Sans JP", sans-serif;
     font-size: 1rem;
-    overflow: hidden;
 }
 
 input[type="text"] {
@@ -80,16 +82,18 @@ dt {
     display: inline-block;
     border: 1px solid black;
     border-radius: 2px;
-    padding: 4px;
+    padding: 3px 4px;
+    margin-bottom: 2px;
     vertical-align: middle;
-    min-width: 24px;
+    min-width: 22px;
     text-align: center;
 }
 
 dd {
     display: inline-block;
-    margin-left: 4px;
-    margin-right: 15px;
+    margin-left: 2px;
+    margin-right: 8px;
+    margin-bottom: 2px;
     vertical-align: middle;
 }
 
@@ -157,9 +161,6 @@ main > ul + ul {
 }
 
 main > ul > li {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     padding: 4px;
 }
 
@@ -185,7 +186,7 @@ footer a {
     opacity: 0.3;
 }
 
-.rs {
+.input-area {
     display: none;
     flex-direction: column;
     justify-content: center;
@@ -200,18 +201,18 @@ footer a {
     font-size: 1.5rem;
 }
 
-.rs h2 {
+.input-area h2 {
     margin-bottom: 25px;
 }
-.rs dl {
+.input-area dl {
     margin-top: 25px;
 }
 
-.rs dt {
+.input-area dt {
     border-color: white;
 }
 
-.rs input[type="text"] {
+.input-area input[type="text"] {
     width: 250px;
     color: black;
     background-color: white;

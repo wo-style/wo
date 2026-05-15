@@ -457,11 +457,6 @@
     const KeyupCommands = {
         [MODE.NOUN_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
-            Enter: (e, item) =>
-                postMessageWithFlag({
-                    action: "generateSentencesWithWord",
-                    payload: { fixedTable: "noun", fixedWord: item.text, targetTable: "verb" },
-                }),
             f: (e, item) =>
                 postMessageWithFlag({
                     action: item.isDelete ? "saveWord" : "deleteWord",
@@ -470,11 +465,6 @@
         },
         [MODE.VERB_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
-            Enter: (e, item) =>
-                postMessageWithFlag({
-                    action: "generateSentencesWithWord",
-                    payload: { fixedTable: "verb", fixedWord: item.text, targetTable: "noun" },
-                }),
             f: (e, item) =>
                 postMessageWithFlag({
                     action: item.isDelete ? "saveWord" : "deleteWord",
@@ -499,13 +489,29 @@
                 }),
         },
         [MODE.GENERATE]: {
-            " ": (e) =>
-                postMessageWithFlag({ action: e.shiftKey ? "generateSentencesWithRandom" : "generateSentences" }),
             f: (e, item) =>
                 postMessageWithFlag({
                     action: "saveSentence",
                     payload: { noun: item.data[0], verb: item.data[1] },
                 }),
+            z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandom" }),
+            x: (e) => postMessageWithFlag({ action: "generateSentences" }),
+            c: (e) => {
+                const { items, index } = STATE[MODE.NOUN_FAVORITE];
+                if (items.length <= 0) return;
+                postMessageWithFlag({
+                    action: "generateSentencesWithWord",
+                    payload: { fixedTable: "noun", fixedWord: items[index].text, targetTable: "verb" },
+                });
+            },
+            v: (e) => {
+                const { items, index } = STATE[MODE.VERB_FAVORITE];
+                if (items.length <= 0) return;
+                postMessageWithFlag({
+                    action: "generateSentencesWithWord",
+                    payload: { fixedTable: "verb", fixedWord: items[index].text, targetTable: "noun" },
+                });
+            },
         },
     };
 
@@ -544,7 +550,6 @@
             return;
         }
 
-        const cm = getMode();
         if (e.key === "r") {
             e.preventDefault();
             showRegisterArea();
@@ -553,6 +558,8 @@
 
         let normalizedKey = e.key;
         if (normalizedKey.toLowerCase() === "f") normalizedKey = "f";
+
+        const cm = getMode();
         const command = KeyupCommands[cm] && KeyupCommands[cm][normalizedKey];
         if (command) {
             e.preventDefault();
