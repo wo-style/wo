@@ -342,53 +342,63 @@
     worker.onmessage = (e) => {
         isWorking = false;
         const { type, result } = e.data;
-        if (type === "error") {
-            console.error("WORKERエラー：", result.errorMessage);
-            if (result.errorType === "INIT_FAILED") loadingEl.textContent = "アプリケーションの初期化に失敗しました";
-            return;
-        } else if (type === "wasm_progress") {
-            loadingEl.textContent = "データベースの準備をしています...";
-        } else if (type === "download_progress") {
-            loadingEl.textContent = `データベースをダウンロードしています...（${result}%）`;
-        } else if (type === "ready") {
-            console.log("OPFSからデータを読み込んでいます...");
-            postMessageWithFlag({ action: "init" });
-        } else if (type === "init_result") {
-            const { sentencesExample, sentencesFavorite, nounsFavorite, verbsFavorite, generateSentences } = result;
-            updateItems(MODE.SENTENCE_EXAMPLE, sentencesExample.items);
-            updateItems(MODE.NOUN_FAVORITE, nounsFavorite.items);
-            updateItems(MODE.VERB_FAVORITE, verbsFavorite.items);
-            updateItems(MODE.SENTENCE_FAVORITE, sentencesFavorite.items);
-            updateItems(MODE.GENERATE, generateSentences.items);
-            setMode(MODE.SENTENCE_EXAMPLE);
-            loadingEl.remove();
-            document.getElementById("app").style.visibility = "visible";
-            console.log("OPFSからデータを読み込みました");
-            isAppReady = true;
-        } else if (type === "getItems_result") {
-            const { type, items } = result;
-            updateItems(type, items);
-        } else if (type === "deleteWord_result") {
-            const { type, word } = result;
-            updateDeletedItem({ type: type, data: [word] });
-        } else if (type === "saveWord_result") {
-            const { type, word } = result;
-            updateSavedItem({ type: type, data: [word] });
-        } else if (type === "deleteSentence_result") {
-            const { type, noun, verb } = result;
-            updateDeletedItem({ type: type, data: [noun, verb] });
-        } else if (type === "saveSentence_result") {
-            const { type, noun, verb } = result;
-            updateSavedItem({ type: type, data: [noun, verb] });
-        } else if (type === "generateSentences_result") {
-            updateItems(MODE.GENERATE, result.items);
-        } else if (type === "generateSentencesWithWord_result") {
-            updateItems(MODE.GENERATE, result.items);
-            if (result.items.length > 0) setMode(MODE.GENERATE);
-        } else if (type === "generateSentencesWithRandom_result") {
-            updateItems(MODE.GENERATE, result.items);
-        } else if (type === "searchSentences_result") {
-            updateItems(MODE.SENTENCE_EXAMPLE, result.items);
+
+        switch (type) {
+            case "error":
+                console.error("WORKERエラー：", result.errorMessage);
+                if (result.errorType === "INIT_FAILED")
+                    loadingEl.textContent = "アプリケーションの初期化に失敗しました";
+                break;
+            case "wasm_progress":
+                loadingEl.textContent = "データベースの準備をしています...";
+                break;
+            case "download_progress":
+                loadingEl.textContent = `データベースをダウンロードしています...（${result}%）`;
+                break;
+            case "ready":
+                console.log("OPFSからデータを読み込んでいます...");
+                postMessageWithFlag({ action: "init" });
+                break;
+            case "init_result": {
+                const { sentencesExample, sentencesFavorite, nounsFavorite, verbsFavorite, generateSentences } = result;
+                updateItems(MODE.SENTENCE_EXAMPLE, sentencesExample.items);
+                updateItems(MODE.NOUN_FAVORITE, nounsFavorite.items);
+                updateItems(MODE.VERB_FAVORITE, verbsFavorite.items);
+                updateItems(MODE.SENTENCE_FAVORITE, sentencesFavorite.items);
+                updateItems(MODE.GENERATE, generateSentences.items);
+                setMode(MODE.SENTENCE_EXAMPLE);
+                loadingEl.remove();
+                document.getElementById("app").style.visibility = "visible";
+                console.log("OPFSからデータを読み込みました");
+                isAppReady = true;
+                break;
+            }
+            case "getItems_result":
+                updateItems(result.type, result.items);
+                break;
+            case "deleteWord_result":
+                updateDeletedItem({ type: result.type, data: [result.word] });
+                break;
+            case "saveWord_result":
+                updateSavedItem({ type: result.type, data: [result.word] });
+                break;
+            case "deleteSentence_result":
+                updateDeletedItem({ type: result.type, data: [result.noun, result.verb] });
+                break;
+            case "saveSentence_result":
+                updateSavedItem({ type: result.type, data: [result.noun, result.verb] });
+                break;
+            case "generateSentences_result":
+            case "generateSentencesWithRandom_result":
+                updateItems(MODE.GENERATE, result.items);
+                break;
+            case "generateSentencesWithWord_result":
+                updateItems(MODE.GENERATE, result.items);
+                if (result.items.length > 0) setMode(MODE.GENERATE);
+                break;
+            case "searchSentences_result":
+                updateItems(MODE.SENTENCE_EXAMPLE, result.items);
+                break;
         }
     };
 
