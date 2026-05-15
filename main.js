@@ -495,7 +495,12 @@
                     payload: { noun: item.data[0], verb: item.data[1] },
                 }),
             z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandom" }),
-            x: (e) => postMessageWithFlag({ action: "generateSentences" }),
+            x: (e) => {
+                const nounFavoriteItems = STATE[MODE.NOUN_FAVORITE].items;
+                const verbFavoriteItems = STATE[MODE.VERB_FAVORITE].items;
+                if (!nounFavoriteItems || !verbFavoriteItems) return;
+                postMessageWithFlag({ action: "generateSentences" }),
+            },
             c: (e) => {
                 const { items, index } = STATE[MODE.NOUN_FAVORITE];
                 if (items.length <= 0) return;
