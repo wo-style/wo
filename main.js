@@ -1,8 +1,7 @@
 (() => {
     const loadingEl = document.getElementById("loading");
 
-    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    if (isMobile) {
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         loadingEl.textContent = "※このページはPC専用です";
         return;
     }
@@ -36,7 +35,7 @@
         document.querySelector("header").style.height = `calc(70px + ${remainder}px)`;
         mainEl.style.height = `${listLengthLimit * itemHeight}px`;
         mainEl.removeChild(dummyUl);
-        console.log(`各モードの表示件数を ${listLengthLimit} に設定しました`);
+        console.log(`表示件数を ${listLengthLimit} に設定しました`);
         return listLengthLimit;
     })();
 
@@ -57,19 +56,7 @@
         [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0 },
     };
 
-    const {
-        getMode,
-        setMode,
-        nextMode,
-        prevMode,
-        isSentenceExampleMode,
-        isNounFavoriteMode,
-        isVerbFavoriteMode,
-        isSentenceFavoriteMode,
-        isGenerateMode,
-        isFavoriteMode,
-        getTableFromMode,
-    } = (() => {
+    const { getMode, setMode, nextMode, prevMode } = (() => {
         const MODES = Object.values(MODE);
         let currentMode = null;
         let currentModeIndex = 0;
@@ -106,29 +93,6 @@
             prevMode: () => {
                 currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
                 setMode(MODES[currentModeIndex]);
-            },
-            isSentenceExampleMode: (mode = currentMode) => {
-                return mode === MODE.SENTENCE_EXAMPLE;
-            },
-            isNounFavoriteMode: (mode = currentMode) => {
-                return mode === MODE.NOUN_FAVORITE;
-            },
-            isVerbFavoriteMode: (mode = currentMode) => {
-                return mode === MODE.VERB_FAVORITE;
-            },
-            isSentenceFavoriteMode: (mode = currentMode) => {
-                return mode === MODE.SENTENCE_FAVORITE;
-            },
-            isGenerateMode: (mode = currentMode) => {
-                return mode === MODE.GENERATE;
-            },
-            isFavoriteMode: (mode = currentMode) => {
-                return [MODE.NOUN_FAVORITE, MODE.VERB_FAVORITE, MODE.SENTENCE_FAVORITE].includes(mode);
-            },
-            getTableFromMode: (mode) => {
-                if (mode === MODE.NOUN_FAVORITE) return "noun";
-                if (mode === MODE.VERB_FAVORITE) return "verb";
-                if (mode === MODE.SENTENCE_FAVORITE) return "sentence";
             },
         };
     })();
@@ -428,47 +392,116 @@
         }
     };
 
+    const KeydownCommands = {
+        w: (cm) => {
+            const state = STATE[cm];
+            if (state.items.length === 0) return;
+            const targetIndex = Math.max(0, state.index - 1);
+            if (targetIndex !== state.index) {
+                state.index = targetIndex;
+                renderList(cm);
+            }
+        },
+        s: (cm) => {
+            const state = STATE[cm];
+            if (state.items.length === 0) return;
+            const targetIndex = Math.min(state.index + 1, state.items.length - 1);
+            if (targetIndex !== state.index) {
+                state.index = targetIndex;
+                renderList(cm);
+            }
+        },
+        a: () => prevMode(),
+        d: () => nextMode(),
+    };
+
     window.addEventListener("keydown", (e) => {
-        if (!isAppReady) return;
-        if (isWorking) return;
+        if (!isAppReady || isWorking) return;
+
         if (isShowRegisterArea()) {
             if (e.key === "Enter") {
                 if (e.isComposing) return;
                 e.preventDefault();
                 focusRegisterInput();
             }
-        } else if (isShowSearchArea()) {
+            return;
+        }
+
+        if (isShowSearchArea()) {
             if (e.key === "Enter") {
                 if (e.isComposing) return;
                 e.preventDefault();
                 focusSearchInput();
             }
-        } else {
-            const cm = getMode();
-            if (e.key === "s" || e.key === "w") {
-                e.preventDefault();
-                const state = STATE[cm];
-                const { items, index } = state;
-                if (items.length === 0) return;
-                let targetIndex = e.key === "s" ? index + 1 : index - 1;
-                targetIndex = Math.max(0, Math.min(targetIndex, items.length - 1));
-                if (targetIndex !== index) {
-                    state.index = targetIndex;
-                    renderList(cm);
-                }
-            } else if (e.key === "d") {
-                e.preventDefault();
-                nextMode();
-            } else if (e.key === "a") {
-                e.preventDefault();
-                prevMode();
-            }
+            return;
+        }
+
+        const cm = getMode();
+        const command = KeydownCommands[e.key.toLowerCase()];
+        if (command) {
+            e.preventDefault();
+            command(cm);
         }
     });
 
+    const KeyupCommands = {
+        [MODE.NOUN_FAVORITE]: {
+            " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
+            Enter: (e, item) =>
+                postMessageWithFlag({
+                    action: "generateSentencesWithWord",
+                    payload: { fixedTable: "noun", fixedWord: item.text, targetTable: "verb" },
+                }),
+            f: (e, item) =>
+                postMessageWithFlag({
+                    action: item.isDelete ? "saveWord" : "deleteWord",
+                    payload: { type: "noun", word: item.text },
+                }),
+        },
+        [MODE.VERB_FAVORITE]: {
+            " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
+            Enter: (e, item) =>
+                postMessageWithFlag({
+                    action: "generateSentencesWithWord",
+                    payload: { fixedTable: "verb", fixedWord: item.text, targetTable: "noun" },
+                }),
+            f: (e, item) =>
+                postMessageWithFlag({
+                    action: item.isDelete ? "saveWord" : "deleteWord",
+                    payload: { type: "verb", word: item.text },
+                }),
+        },
+        [MODE.SENTENCE_FAVORITE]: {
+            " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_FAVORITE } }),
+            f: (e, item) =>
+                postMessageWithFlag({
+                    action: item.isDelete ? "saveSentence" : "deleteSentence",
+                    payload: { noun: item.data[0], verb: item.data[1] },
+                }),
+        },
+        [MODE.SENTENCE_EXAMPLE]: {
+            " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_EXAMPLE } }),
+            q: (e) => showSearchArea(),
+            f: (e, item) =>
+                postMessageWithFlag({
+                    action: "saveWord",
+                    payload: { type: e.shiftKey ? "verb" : "noun", word: e.shiftKey ? item.data[1] : item.data[0] },
+                }),
+        },
+        [MODE.GENERATE]: {
+            " ": (e) =>
+                postMessageWithFlag({ action: e.shiftKey ? "generateSentencesWithRandom" : "generateSentences" }),
+            f: (e, item) =>
+                postMessageWithFlag({
+                    action: "saveSentence",
+                    payload: { noun: item.data[0], verb: item.data[1] },
+                }),
+        },
+    };
+
     window.addEventListener("keyup", (e) => {
-        if (!isAppReady) return;
-        if (isWorking) return;
+        if (!isAppReady || isWorking) return;
+
         if (isShowRegisterArea()) {
             if (isFocusRegisterInput()) return;
             if (e.key === "r") {
@@ -478,120 +511,43 @@
                 e.preventDefault();
                 const noun = getInputNounValue();
                 const verb = getInputVerbValue();
-                if (noun && verb) {
-                    postMessageWithFlag({ action: "saveSentence", payload: { noun, verb } });
-                } else if (!noun && verb) {
+                if (noun && verb) postMessageWithFlag({ action: "saveSentence", payload: { noun, verb } });
+                else if (!noun && verb)
                     postMessageWithFlag({ action: "saveWord", payload: { type: "verb", word: verb } });
-                } else if (noun && !verb) {
+                else if (noun && !verb)
                     postMessageWithFlag({ action: "saveWord", payload: { type: "noun", word: noun } });
-                }
                 exitRegisterArea();
             }
-        } else if (isShowSearchArea()) {
+            return;
+        }
+
+        if (isShowSearchArea()) {
             if (isFocusSearchInput()) return;
             if (e.key === "q") {
                 e.preventDefault();
                 hideSearchArea();
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                const word = getInputSearchValue();
-                postMessageWithFlag({ action: "searchSentences", payload: { word } });
+                postMessageWithFlag({ action: "searchSentences", payload: { word: getInputSearchValue() } });
                 exitSearchArea();
             }
-        } else {
-            const cm = getMode();
-            if (e.key === "r") {
-                e.preventDefault();
-                showRegisterArea();
-            } else if (e.key === "q") {
-                if (isSentenceExampleMode()) {
-                    e.preventDefault();
-                    showSearchArea();
-                }
-            } else {
-                const { items, index } = STATE[cm];
-                if (e.key === " ") {
-                    e.preventDefault();
-                    if (isFavoriteMode(cm)) {
-                        postMessageWithFlag({ action: "getItems", payload: { type: cm } });
-                    } else if (isSentenceExampleMode(cm)) {
-                        postMessageWithFlag({ action: "getItems", payload: { type: cm } });
-                    } else if (isGenerateMode(cm)) {
-                        if (e.shiftKey) {
-                            postMessageWithFlag({ action: "generateSentencesWithRandom" });
-                        } else {
-                            postMessageWithFlag({ action: "generateSentences" });
-                        }
-                    }
-                } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    if (isNounFavoriteMode(cm) || isVerbFavoriteMode(cm)) {
-                        if (items[index].isDelete) {
-                            const type = getTableFromMode(cm);
-                            const word = items[index].text;
-                            postMessageWithFlag({ action: "saveWord", payload: { type, word } });
-                        }
-                    } else if (isGenerateMode(cm)) {
-                        const row = items[index].data;
-                        const noun = row[0];
-                        const verb = row[1];
-                        postMessageWithFlag({ action: "saveSentence", payload: { noun, verb } });
-                    } else if (isSentenceFavoriteMode(cm)) {
-                        if (items[index].isDelete) {
-                            const row = items[index].data;
-                            const noun = row[0];
-                            const verb = row[1];
-                            postMessageWithFlag({ action: "saveSentence", payload: { noun, verb } });
-                        }
-                    } else if (isSentenceExampleMode(cm)) {
-                        if (e.shiftKey) {
-                            e.preventDefault();
-                            postMessageWithFlag({
-                                action: "saveWord",
-                                payload: { type: "verb", word: items[index].data[1] },
-                            });
-                        } else {
-                            e.preventDefault();
-                            postMessageWithFlag({
-                                action: "saveWord",
-                                payload: { type: "noun", word: items[index].data[0] },
-                            });
-                        }
-                    }
-                } else if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    if (isNounFavoriteMode(cm) || isVerbFavoriteMode(cm)) {
-                        const type = getTableFromMode(cm);
-                        const word = items[index].text;
-                        postMessageWithFlag({ action: "deleteWord", payload: { type, word } });
-                    } else if (isSentenceFavoriteMode(cm)) {
-                        const row = items[index].data;
-                        const noun = row[0];
-                        const verb = row[1];
-                        postMessageWithFlag({ action: "deleteSentence", payload: { noun, verb } });
-                    }
-                } else if (e.key === "Enter") {
-                    if (isNounFavoriteMode(cm)) {
-                        postMessageWithFlag({
-                            action: "generateSentencesWithWord",
-                            payload: {
-                                fixedTable: "noun",
-                                fixedWord: items[index].text,
-                                targetTable: "verb",
-                            },
-                        });
-                    } else if (isVerbFavoriteMode(cm)) {
-                        postMessageWithFlag({
-                            action: "generateSentencesWithWord",
-                            payload: {
-                                fixedTable: "verb",
-                                fixedWord: items[index].text,
-                                targetTable: "noun",
-                            },
-                        });
-                    }
-                }
-            }
+            return;
+        }
+
+        const cm = getMode();
+        if (e.key === "r") {
+            e.preventDefault();
+            showRegisterArea();
+            return;
+        }
+
+        let normalizedKey = e.key;
+        if (normalizedKey.toLowerCase() === "f") normalizedKey = "f";
+        const command = KeyupCommands[cm] && KeyupCommands[cm][normalizedKey];
+        if (command) {
+            e.preventDefault();
+            const { items, index } = STATE[cm];
+            command(e, items[index]);
         }
     });
 })();
