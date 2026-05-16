@@ -23,18 +23,14 @@
 
     const LIST_LENGTH_LIMIT = (() => {
         const mainEl = document.querySelector("main");
-        const dummyUl = document.createElement("ul");
-        const dummyLi = document.createElement("li");
-        dummyLi.textContent = "太陽を張り込む";
-        dummyUl.appendChild(dummyLi);
-        mainEl.appendChild(dummyUl);
+        const dummyLi = document.getElementById("dummyLi");
         const listHeight = mainEl.clientHeight;
         const itemHeight = dummyLi.offsetHeight || 24;
         const listLengthLimit = Math.floor(listHeight / itemHeight);
         const remainder = listHeight % itemHeight;
         document.querySelector("header").style.height = `calc(70px + ${remainder}px)`;
         mainEl.style.height = `${listLengthLimit * itemHeight}px`;
-        mainEl.removeChild(dummyUl);
+        dummyLi.remove();
         console.log(`表示件数を ${listLengthLimit} に設定しました`);
         return listLengthLimit;
     })();
@@ -58,6 +54,7 @@
 
     const { getMode, setMode, nextMode, prevMode } = (() => {
         const MODES = Object.values(MODE);
+
         let currentMode = null;
         let currentModeIndex = 0;
 

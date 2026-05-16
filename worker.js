@@ -3,15 +3,6 @@ import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 const CURRENT_DB_VERSION = 5;
 
 const dbMethods = {
-    init: (db, { limit } = {}) => {
-        return {
-            sentencesExample: dbMethods.getItems(db, { type: "sentence_example", limit }),
-            nounsFavorite: dbMethods.getItems(db, { type: "noun_favorite" }),
-            verbsFavorite: dbMethods.getItems(db, { type: "verb_favorite" }),
-            sentencesFavorite: dbMethods.getItems(db, { type: "sentence_favorite" }),
-            generateSentences: dbMethods.generateSentences(db, { limit }),
-        };
-    },
     getItems: (db, { type, limit, search } = {}) => {
         let items;
         switch (type) {
@@ -107,11 +98,20 @@ const dbMethods = {
     },
 };
 
-const makeOpfs = async (root, filename) => {
+dbMethods.init = (db, { limit } = {}) => {
+    return {
+        sentencesExample: dbMethods.getItems(db, { type: "sentence_example", limit }),
+        nounsFavorite: dbMethods.getItems(db, { type: "noun_favorite" }),
+        verbsFavorite: dbMethods.getItems(db, { type: "verb_favorite" }),
+        sentencesFavorite: dbMethods.getItems(db, { type: "sentence_favorite" }),
+        generateSentences: dbMethods.generateSentences(db, { limit }),
+    };
+};
+
+const downloadDbToOpfs = async (root, filename, dburl) => {
     console.log("データベースをダウンロードします...");
     await root.removeEntry(filename).catch(() => null);
-    const DB_URL = "https://db.wo.style/wo.db";
-    const response = await fetch(DB_URL, { cache: "no-store" });
+    const response = await fetch(dburl, { cache: "no-store" });
     if (!response.ok) {
         throw new Error(`データベースのダウンロードに失敗しました： ${response.status}`);
     }
@@ -193,13 +193,14 @@ let dbInstance;
 
 const start = async (sqlite3) => {
     const filename = "wo.db";
+    const dburl = "https://db.wo.style/wo.db";
     try {
         const root = await navigator.storage.getDirectory();
         console.log("OPFSのデータベースを確認します...");
         const fileHandle = await root.getFileHandle(filename).catch(() => null);
         if (!fileHandle) {
             console.log("OPFSにデータベースは存在しませんでした");
-            await makeOpfs(root, filename);
+            await downloadDbToOpfs(root, filename, dburl);
         } else {
             const tempDb = new sqlite3.oo1.OpfsDb("/" + filename);
             const userVersion = tempDb.selectValue("PRAGMA user_version");
@@ -213,7 +214,7 @@ const start = async (sqlite3) => {
                 const backupData = backupFavorites(oldDb);
                 oldDb.close();
 
-                await makeOpfs(root, filename);
+                await downloadDbToOpfs(root, filename, dburl);
 
                 const newDb = new sqlite3.oo1.OpfsDb("/" + filename);
                 restoreFavorites(newDb, backupData);
@@ -240,7 +241,10 @@ const start = async (sqlite3) => {
 self.onmessage = async (e) => {
     const { action, payload } = e.data;
     if (!dbInstance) {
-        postMessage({ type: "error", result: { errorMessage: "まだデータベースの用意ができていません" } });
+        postMessage({
+            type: "error",
+            result: { errorMessage: "まだデータベースの初期化前です", errorType: "DB_FAILED" },
+        });
         return;
     }
     const method = dbMethods[action];
@@ -249,14 +253,14 @@ self.onmessage = async (e) => {
             const result = method(dbInstance, payload);
             postMessage({ type: `${action}_result`, result });
         } catch (err) {
-            postMessage({ type: "error", relust: { errorMessage: err.message, errorType: "QUERY_FAILED" } });
+            postMessage({ type: "error", result: { errorMessage: err.message, errorType: "QUERY_FAILED" } });
         }
     }
 };
 
 const initSqliteWasm = async () => {
     postMessage({ type: "wasm_progress" });
-    console.log("WASMをコンパイルしています...");
+    console.log("sqliteWasmの準備をしています...");
     const sqlite3 = await sqlite3InitModule({
         print: console.log,
         printErr: console.error,
