@@ -192,7 +192,6 @@
         const searchArea = document.getElementById("search");
         const inputSearch = document.getElementById("inputSearch");
         const hideIsInput = document.querySelectorAll(".hide-is-input");
-        const switchFocusCaption = document.getElementById("switchFocusCaption");
 
         let isShow = false;
         let isFocus = false;
@@ -230,10 +229,8 @@
                 if (!isShow) return;
                 if (document.activeElement === inputSearch) {
                     inputSearch.blur();
-                    switchFocusCaption.textContent = "入力する";
                 } else {
                     inputSearch.focus();
-                    switchFocusCaption.textContent = "入力をやめる";
                 }
             },
             getInputSearchValue: () => {
@@ -522,13 +519,14 @@
 
         if (isShowRegisterArea()) {
             if (isFocusRegisterInput()) return;
-            if (e.key === "r") {
+            if (e.key === "Escape") {
                 e.preventDefault();
                 hideRegisterArea();
-            } else if (e.key === "ArrowUp") {
-                e.preventDefault();
+            } else if (e.key === "f") {
                 const noun = getInputNounValue();
                 const verb = getInputVerbValue();
+                if (noun === "" && verb === "") return;
+                e.preventDefault();
                 if (noun && verb) postMessageWithFlag({ action: "saveSentence", payload: { noun, verb } });
                 else if (!noun && verb)
                     postMessageWithFlag({ action: "saveWord", payload: { type: "verb", word: verb } });
@@ -541,10 +539,10 @@
 
         if (isShowSearchArea()) {
             if (isFocusSearchInput()) return;
-            if (e.key === "q") {
+            if (e.key === "Escape") {
                 e.preventDefault();
                 hideSearchArea();
-            } else if (e.key === "ArrowUp") {
+            } else if (e.key === "f") {
                 const word = getInputSearchValue();
                 if (word === "") return;
                 e.preventDefault();
