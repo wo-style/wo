@@ -281,11 +281,11 @@
     };
 
     const updateItems = (mode, items) => {
-        const allItems = items.map((row) => {
+        const formatItems = items.map((row) => {
             const text = row[0] + (row[1] ? " を " + row[1] : "");
             return { text: text, isDelete: false, data: row };
         });
-        STATE[mode].items = allItems;
+        STATE[mode].items = formatItems;
         STATE[mode].index = 0;
         STATE[mode].offset = 0;
         renderList(mode);
@@ -388,7 +388,6 @@
                 break;
             case "generateSentencesWithWord_result":
                 updateItems(MODE.GENERATE, result.items);
-                if (result.items.length > 0) setMode(MODE.GENERATE);
                 break;
             case "searchSentences_result":
                 updateItems(MODE.SENTENCE_EXAMPLE, result.items);
@@ -492,7 +491,7 @@
             x: (e) => {
                 const nounFavoriteItems = STATE[MODE.NOUN_FAVORITE].items;
                 const verbFavoriteItems = STATE[MODE.VERB_FAVORITE].items;
-                if (nounFavoriteItems.length === 0 || verbFavoriteItems.length === 0) return;
+                if (nounFavoriteItems.length <= 0 || verbFavoriteItems.length <= 0) return;
                 postMessageWithFlag({ action: "generateSentences" });
             },
             c: (e) => {
