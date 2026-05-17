@@ -475,11 +475,13 @@
         [MODE.SENTENCE_EXAMPLE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_EXAMPLE } }),
             q: (e) => showSearchArea(),
-            f: (e, item) =>
+            f: (e, item) => {
+                if (!item) return;
                 postMessageWithFlag({
                     action: "saveWord",
                     payload: { type: e.shiftKey ? "verb" : "noun", word: e.shiftKey ? item.data[1] : item.data[0] },
-                }),
+                });
+            },
         },
         [MODE.GENERATE]: {
             f: (e, item) =>
