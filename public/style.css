@@ -15,6 +15,21 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: "DotGothic16";
+    src: url("./fonts/DotGothic16-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --wo-bg: #dbe59c;
+    --wo-selected: #62834b;
+    --wo-text: #112c18;
+    --wo-input-bg: rgb(17, 44, 24, 0.7);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -35,8 +50,10 @@ html {
 
 body {
     height: 100%;
-    font-family: "Noto Sans JP", sans-serif;
+    font-family: "DotGothic16", sans-serif;
     font-size: 1rem;
+    color: var(--wo-text);
+    background-color: var(--wo-bg);
 }
 
 input[type="text"] {
@@ -80,7 +97,7 @@ dl {
 
 dt {
     display: inline-block;
-    border: 1px solid black;
+    border: 1px solid var(--wo-text);
     border-radius: 2px;
     padding: 3px 4px;
     margin-bottom: 2px;
@@ -101,8 +118,6 @@ nav {
     height: 30px;
     display: flex;
     align-items: center;
-    border-top: 1px solid black;
-    border-bottom: 1px solid black;
 }
 
 nav > h2 {
@@ -112,8 +127,7 @@ nav > h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
+    border: 1px solid var(--wo-text);
 }
 
 nav > h2 + h2 {
@@ -126,14 +140,15 @@ nav > h2[id*="generate"] {
 }
 
 nav > h2.selected {
-    background-color: black;
-    color: white;
+    background-color: var(--wo-selected);
+    color: var(--wo-bg);
+    border-bottom: 1px solid var(--wo-bg);
 }
 
 main {
     height: calc(100% - 170px);
     display: flex;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--wo-text);
 }
 
 main > ul {
@@ -143,8 +158,12 @@ main > ul {
     overflow-y: scroll;
     -ms-overflow-style: none;
     scrollbar-width: none;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
+    border-left: 1px solid var(--wo-text);
+    border-right: 1px solid var(--wo-text);
+}
+
+main > ul + ul {
+    border-left: none;
 }
 
 main > ul::-webkit-scrollbar {
@@ -156,17 +175,14 @@ main > ul[id*="generate"] {
     flex: 2;
 }
 
-main > ul + ul {
-    border-left: none;
-}
-
 main > ul > li {
     padding: 4px;
 }
 
 main > ul > li.selected {
     font-weight: 700;
-    color: green;
+    color: var(--wo-bg);
+    background-color: var(--wo-selected);
 }
 
 footer {
@@ -196,8 +212,8 @@ footer a {
     left: 0;
     width: 100%;
     height: 100%;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.8);
+    color: var(--wo-bg);
+    background-color: var(--wo-input-bg);
     font-size: 1.5rem;
 }
 
@@ -209,13 +225,13 @@ footer a {
 }
 
 .input-area dt {
-    border-color: white;
+    border-color: var(--wo-bg);
 }
 
 .input-area input[type="text"] {
     width: 250px;
-    color: black;
-    background-color: white;
+    color: var(--wo-text);
+    background-color: var(--wo-bg);
     padding: 8px;
     margin: 0 4px;
     height: 40px;
