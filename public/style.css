@@ -87,7 +87,6 @@ header {
 
 h1 {
     font-size: 1.5rem;
-    font-weight: 700;
     margin-bottom: 10px;
 }
 
@@ -180,7 +179,6 @@ main > ul > li {
 }
 
 main > ul > li.selected {
-    font-weight: 700;
     color: var(--wo-bg);
     background-color: var(--wo-selected);
 }
