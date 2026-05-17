@@ -45,11 +45,11 @@
     });
 
     const STATE = {
-        [MODE.SENTENCE_EXAMPLE]: { name: "例文", items: [], index: 0, offset: 0 },
-        [MODE.NOUN_FAVORITE]: { name: "名詞", items: [], index: 0, offset: 0 },
-        [MODE.VERB_FAVORITE]: { name: "動詞", items: [], index: 0, offset: 0 },
-        [MODE.SENTENCE_FAVORITE]: { name: "名文", items: [], index: 0, offset: 0 },
-        [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0 },
+        [MODE.SENTENCE_EXAMPLE]: { name: "例文", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.NOUN_FAVORITE]: { name: "名詞", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.VERB_FAVORITE]: { name: "動詞", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.SENTENCE_FAVORITE]: { name: "名文", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0, deleteds: new Set() },
     };
 
     const { getMode, setMode, nextMode, prevMode } = (() => {
@@ -261,15 +261,17 @@
             const li = lists[i];
             if (i < displayCount) {
                 const itemIndex = state.offset + i;
-                const item = state.items[itemIndex];
-                li.textContent = item.text;
+                const row = state.items[itemIndex];
+                li.textContent = row[0] + (row[1] ? " を " + row[1] : "");
                 li.style.display = "block";
+
                 if (itemIndex === state.index) {
                     li.classList.add("selected");
                 } else {
                     li.classList.remove("selected");
                 }
-                if (item.isDelete) {
+
+                if (state.deleteds.has(itemIndex)) {
                     li.classList.add("deleted");
                 } else {
                     li.classList.remove("deleted");
@@ -281,22 +283,19 @@
     };
 
     const updateItems = (mode, items) => {
-        const formatItems = items.map((row) => {
-            const text = row[0] + (row[1] ? " を " + row[1] : "");
-            return { text: text, isDelete: false, data: row };
-        });
-        STATE[mode].items = formatItems;
+        STATE[mode].items = items;
         STATE[mode].index = 0;
         STATE[mode].offset = 0;
+        STATE[mode].deleteds = new Set();
         renderList(mode);
         console.log("「" + STATE[mode].name + "」を更新しました");
     };
 
     const updateDeletedItem = ({ type, data }) => {
         const state = STATE[type];
-        const index = state.items.findIndex((item) => item.data[0] === data[0] && item.data[1] === data[1]);
+        const index = state.items.findIndex((row) => row[0] === data[0] && row[1] === data[1]);
         if (index !== -1) {
-            state.items[index].isDelete = true;
+            state.deleteds.add(index);
             renderList(type);
         }
         const word = data[0] + (data[1] ? " を " + data[1] : "");
@@ -305,13 +304,15 @@
 
     const updateSavedItem = ({ type, data }) => {
         const state = STATE[type];
-        const index = state.items.findIndex((item) => item.data[0] === data[0] && item.data[1] === data[1]);
+        const index = state.items.findIndex((row) => row[0] === data[0] && row[1] === data[1]);
         if (index !== -1) {
-            state.items[index].isDelete = false;
+            state.deleteds.delete(index);
         } else {
-            const text = data[0] + (data[1] ? " を " + data[1] : "");
-            state.items.unshift({ text, isDelete: false, data });
+            state.items.unshift(data);
             state.index = 0;
+            const newDeleteds = new Set();
+            state.deleteds.forEach((idx) => newDeleteds.add(idx + 1));
+            state.deleteds = newDeleteds;
         }
         renderList(type);
         const word = data[0] + (data[1] ? " を " + data[1] : "");
@@ -450,44 +451,50 @@
     const KeyupCommands = {
         [MODE.NOUN_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
-            f: (e, item) =>
+            f: (e, row) => {
+                const isDeleted = STATE[MODE.NOUN_FAVORITE].deleteds.has(STATE[MODE.NOUN_FAVORITE].index);
                 postMessageWithFlag({
-                    action: item.isDelete ? "saveWord" : "deleteWord",
-                    payload: { type: "noun", word: item.text },
-                }),
+                    action: isDeleted ? "saveWord" : "deleteWord",
+                    payload: { type: "noun", word: row[0] },
+                });
+            },
         },
         [MODE.VERB_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
-            f: (e, item) =>
+            f: (e, row) => {
+                const isDeleted = STATE[MODE.VERB_FAVORITE].deleteds.has(STATE[MODE.VERB_FAVORITE].index);
                 postMessageWithFlag({
-                    action: item.isDelete ? "saveWord" : "deleteWord",
-                    payload: { type: "verb", word: item.text },
-                }),
+                    action: isDeleted ? "saveWord" : "deleteWord",
+                    payload: { type: "verb", word: row[0] },
+                });
+            },
         },
         [MODE.SENTENCE_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_FAVORITE } }),
-            f: (e, item) =>
+            f: (e, row) => {
+                const isDeleted = STATE[MODE.SENTENCE_FAVORITE].deleteds.has(STATE[MODE.SENTENCE_FAVORITE].index);
                 postMessageWithFlag({
-                    action: item.isDelete ? "saveSentence" : "deleteSentence",
-                    payload: { noun: item.data[0], verb: item.data[1] },
-                }),
+                    action: isDeleted ? "saveSentence" : "deleteSentence",
+                    payload: { noun: row[0], verb: row[1] },
+                });
+            },
         },
         [MODE.SENTENCE_EXAMPLE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_EXAMPLE } }),
             q: (e) => showSearchArea(),
-            f: (e, item) => {
-                if (!item) return;
+            f: (e, row) => {
+                if (!row) return;
                 postMessageWithFlag({
                     action: "saveWord",
-                    payload: { type: e.shiftKey ? "verb" : "noun", word: e.shiftKey ? item.data[1] : item.data[0] },
+                    payload: { type: e.shiftKey ? "verb" : "noun", word: e.shiftKey ? row[1] : row[0] },
                 });
             },
         },
         [MODE.GENERATE]: {
-            f: (e, item) =>
+            f: (e, row) =>
                 postMessageWithFlag({
                     action: "saveSentence",
-                    payload: { noun: item.data[0], verb: item.data[1] },
+                    payload: { noun: row[0], verb: row[1] },
                 }),
             z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandom" }),
             x: (e) => {
@@ -501,7 +508,7 @@
                 if (items.length <= 0) return;
                 postMessageWithFlag({
                     action: "generateSentencesWithWord",
-                    payload: { fixedTable: "noun", fixedWord: items[index].text, targetTable: "verb" },
+                    payload: { fixedTable: "noun", fixedWord: items[index][0], targetTable: "verb" },
                 });
             },
             v: (e) => {
@@ -509,7 +516,7 @@
                 if (items.length <= 0) return;
                 postMessageWithFlag({
                     action: "generateSentencesWithWord",
-                    payload: { fixedTable: "verb", fixedWord: items[index].text, targetTable: "noun" },
+                    payload: { fixedTable: "verb", fixedWord: items[index][0], targetTable: "noun" },
                 });
             },
         },
