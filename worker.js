@@ -1,19 +1,37 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
-const CURRENT_DB_VERSION = 5;
+const CURRENT_DB_VERSION = 1;
 
 const dbMethods = {
-    getItems: (db, { type, limit, search } = {}) => {
+    getItems: (db, { type, limit } = {}) => {
         let items;
         switch (type) {
-            case "sentence_example":
-                const maxId = db.selectValue("SELECT MAX(id) FROM wo");
-                const randomIds = [];
-                for (let i = 0; i < limit; i++) {
-                    randomIds.push(Math.floor(Math.random() * maxId) + 1);
+            case "sentence_example": {
+                const maxId = db.selectValue("SELECT MAX(id) FROM verb_example");
+                const uniqueIds = new Set();
+                while (uniqueIds.size < limit) {
+                    uniqueIds.add(Math.floor(Math.random() * maxId) + 1);
                 }
-                items = db.selectArrays(`SELECT noun, verb FROM wo WHERE id IN (${randomIds.join(",")})`);
+                const randomVerbIds = Array.from(uniqueIds);
+                const placeholders = randomVerbIds.map(() => "?").join(",");
+                items = db.selectArrays(
+                    `
+                    WITH target_pairs AS (
+                        SELECT verb_id, noun_id,
+                               ROW_NUMBER() OVER(PARTITION BY verb_id ORDER BY RANDOM()) as rn
+                        FROM sentence_example
+                        WHERE verb_id IN (${placeholders})
+                    )
+                    SELECT ne.word, ve.word
+                    FROM target_pairs tp
+                    JOIN noun_example ne ON tp.noun_id = ne.id
+                    JOIN verb_example ve ON tp.verb_id = ve.id
+                    WHERE tp.rn = 1
+                    `,
+                    randomVerbIds,
+                );
                 break;
+            }
             case "noun_favorite":
                 items = db.selectArrays("SELECT word FROM noun ORDER BY ROWID DESC");
                 break;
@@ -23,14 +41,19 @@ const dbMethods = {
             case "sentence_favorite":
                 items = db.selectArrays("SELECT noun, verb FROM sentence ORDER BY ROWID DESC");
                 break;
-            default:
-                throw new Error(`不正なテーブルです： ${type}`);
         }
         return { type, items };
     },
     searchSentences: (db, { word }) => {
         const items = db.selectArrays(
-            `SELECT noun, verb FROM wo WHERE noun LIKE ? OR verb LIKE ? ORDER BY count DESC LIMIT 300`,
+            `
+            SELECT ne.word, ve.word
+            FROM sentence_example se
+            JOIN noun_example ne ON se.noun_id = ne.id
+            JOIN verb_example ve ON se.verb_id = ve.id
+            WHERE ne.word LIKE ? OR ve.word LIKE ?
+            ORDER BY se.count DESC LIMIT 300
+        `,
             [`%${word}%`, `%${word}%`],
         );
         return { type: "searchSentences_result", items };
@@ -59,7 +82,7 @@ const dbMethods = {
         });
         return { type: `${type}_favorite`, word };
     },
-    generateSentences: (db, { limit } = {}) => {
+    generateSentencesWithRandomByFavorites: (db, { limit } = {}) => {
         const nouns = db.selectArrays("SELECT word FROM noun ORDER BY RANDOM() LIMIT " + limit);
         const verbs = db.selectArrays("SELECT word FROM verb ORDER BY RANDOM() LIMIT " + limit);
         const items = [];
@@ -69,24 +92,17 @@ const dbMethods = {
         }
         return { items };
     },
-    generateSentencesWithRandom: (db, { limit } = {}) => {
-        const maxId = db.selectValue("SELECT MAX(id) FROM wo");
-        const nounIds = [];
-        const verbIds = [];
-        for (let i = 0; i < limit; i++) {
-            nounIds.push(Math.floor(Math.random() * maxId) + 1);
-            verbIds.push(Math.floor(Math.random() * maxId) + 1);
-        }
-        const nouns = db.selectArrays(`SELECT noun FROM wo WHERE id IN (${nounIds.join(",")})`);
-        const verbs = db.selectArrays(`SELECT verb FROM wo WHERE id IN (${verbIds.join(",")})`);
+    generateSentencesWithRandomByExamples: (db, { limit } = {}) => {
+        const nouns = db.selectArrays("SELECT word FROM noun_example ORDER BY RANDOM() LIMIT ?", [limit]);
+        const verbs = db.selectArrays("SELECT word FROM verb_example ORDER BY RANDOM() LIMIT ?", [limit]);
         const items = [];
-        const count = Math.min(nouns.length, verbs.length);
-        for (let i = 0; i < count; i++) {
+        const actualLimit = Math.min(nouns.length, verbs.length);
+        for (let i = 0; i < actualLimit; i++) {
             items.push([nouns[i][0], verbs[i][0]]);
         }
         return { items };
     },
-    generateSentencesWithWord: (db, { fixedTable, targetTable, fixedWord } = {}) => {
+    generateSentencesWithWordByFavorites: (db, { fixedTable, targetTable, fixedWord } = {}) => {
         const isFixedNoun = fixedTable === "noun";
         const rotateColumn = "word";
         const rotateQuery = targetTable === "verb" ? "SELECT word FROM verb" : "SELECT word FROM noun";
@@ -99,12 +115,18 @@ const dbMethods = {
 };
 
 dbMethods.init = (db, { limit } = {}) => {
+    const sentencesExample = dbMethods.getItems(db, { type: "sentence_example", limit });
+    const nounsFavorite = dbMethods.getItems(db, { type: "noun_favorite" });
+    const verbsFavorite = dbMethods.getItems(db, { type: "verb_favorite" });
+    const sentencesFavorite = dbMethods.getItems(db, { type: "sentence_favorite" });
+    const generateSentences = dbMethods.generateSentencesWithRandomByFavorites(db, { limit });
+
     return {
-        sentencesExample: dbMethods.getItems(db, { type: "sentence_example", limit }),
-        nounsFavorite: dbMethods.getItems(db, { type: "noun_favorite" }),
-        verbsFavorite: dbMethods.getItems(db, { type: "verb_favorite" }),
-        sentencesFavorite: dbMethods.getItems(db, { type: "sentence_favorite" }),
-        generateSentences: dbMethods.generateSentences(db, { limit }),
+        sentencesExample,
+        nounsFavorite,
+        verbsFavorite,
+        sentencesFavorite,
+        generateSentences,
     };
 };
 

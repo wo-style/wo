@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
+backup/
 wo.db
 delete-opfs.js

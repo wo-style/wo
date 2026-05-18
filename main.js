@@ -383,11 +383,11 @@
             case "saveSentence_result":
                 updateSavedItem({ type: result.type, data: [result.noun, result.verb] });
                 break;
-            case "generateSentences_result":
-            case "generateSentencesWithRandom_result":
+            case "generateSentencesWithRandomByFavorites_result":
+            case "generateSentencesWithRandomByExamples_result":
                 updateItems(MODE.GENERATE, result.items);
                 break;
-            case "generateSentencesWithWord_result":
+            case "generateSentencesWithWordByFavorites_result":
                 updateItems(MODE.GENERATE, result.items);
                 break;
             case "searchSentences_result":
@@ -496,18 +496,18 @@
                     action: "saveSentence",
                     payload: { noun: row[0], verb: row[1] },
                 }),
-            z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandom" }),
+            z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandomByExamples" }),
             x: (e) => {
                 const nounFavoriteItems = STATE[MODE.NOUN_FAVORITE].items;
                 const verbFavoriteItems = STATE[MODE.VERB_FAVORITE].items;
                 if (nounFavoriteItems.length <= 0 || verbFavoriteItems.length <= 0) return;
-                postMessageWithFlag({ action: "generateSentences" });
+                postMessageWithFlag({ action: "generateSentencesWithRandomByFavorites" });
             },
             c: (e) => {
                 const { items, index } = STATE[MODE.NOUN_FAVORITE];
                 if (items.length <= 0) return;
                 postMessageWithFlag({
-                    action: "generateSentencesWithWord",
+                    action: "generateSentencesWithWordByFavorites",
                     payload: { fixedTable: "noun", fixedWord: items[index][0], targetTable: "verb" },
                 });
             },
@@ -515,7 +515,7 @@
                 const { items, index } = STATE[MODE.VERB_FAVORITE];
                 if (items.length <= 0) return;
                 postMessageWithFlag({
-                    action: "generateSentencesWithWord",
+                    action: "generateSentencesWithWordByFavorites",
                     payload: { fixedTable: "verb", fixedWord: items[index][0], targetTable: "noun" },
                 });
             },
