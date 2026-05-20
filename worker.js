@@ -1,6 +1,6 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
-const CURRENT_DB_VERSION = 4;
+const CURRENT_DB_VERSION = 5;
 
 const dbMethods = {
     getItems: (db, { type, limit } = {}) => {
