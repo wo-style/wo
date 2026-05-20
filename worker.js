@@ -1,6 +1,6 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
-const CURRENT_DB_VERSION = 2;
+const CURRENT_DB_VERSION = 3;
 
 const dbMethods = {
     getItems: (db, { type, limit } = {}) => {
@@ -215,7 +215,7 @@ let dbInstance;
 
 const start = async (sqlite3) => {
     const filename = "wo.db";
-    const dburl = "https://db.wo.style/wo-2.db";
+    const dburl = "https://db.wo.style/wo.db";
     try {
         const root = await navigator.storage.getDirectory();
         console.log("OPFSのデータベースを確認します...");
