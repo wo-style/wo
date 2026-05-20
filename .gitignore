@@ -23,8 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-backup/
-wo.db
 delete-opfs.js
 make-tables.js
 db-schema
