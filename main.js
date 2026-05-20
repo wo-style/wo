@@ -21,6 +21,14 @@
         SENTENCE_FAVORITE: "sentence_favorite",
     };
 
+    const STATE = {
+        [MODE.SENTENCE_EXAMPLE]: { name: "例文", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.NOUN_FAVORITE]: { name: "名詞", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.VERB_FAVORITE]: { name: "動詞", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.SENTENCE_FAVORITE]: { name: "名文", items: [], index: 0, offset: 0, deleteds: new Set() },
+        [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0, deleteds: new Set() },
+    };
+
     const LIST_LENGTH_LIMIT = (() => {
         const mainEl = document.querySelector("main");
         const dummyLi = document.getElementById("dummyLi");
@@ -43,14 +51,6 @@
             list.appendChild(li);
         }
     });
-
-    const STATE = {
-        [MODE.SENTENCE_EXAMPLE]: { name: "例文", items: [], index: 0, offset: 0, deleteds: new Set() },
-        [MODE.NOUN_FAVORITE]: { name: "名詞", items: [], index: 0, offset: 0, deleteds: new Set() },
-        [MODE.VERB_FAVORITE]: { name: "動詞", items: [], index: 0, offset: 0, deleteds: new Set() },
-        [MODE.SENTENCE_FAVORITE]: { name: "名文", items: [], index: 0, offset: 0, deleteds: new Set() },
-        [MODE.GENERATE]: { name: "作文", items: [], index: 0, offset: 0, deleteds: new Set() },
-    };
 
     const { getMode, setMode, nextMode, prevMode } = (() => {
         const MODES = Object.values(MODE);
