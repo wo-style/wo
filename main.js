@@ -192,9 +192,11 @@
         const searchArea = document.getElementById("search");
         const inputSearch = document.getElementById("inputSearch");
         const hideIsInput = document.querySelectorAll(".hide-is-input");
+        const searchModeName = document.getElementById("searchModeName");
 
         let isShow = false;
         let isFocus = false;
+        let searchMode = null;
 
         inputSearch.addEventListener("focus", () => {
             isFocus = true;
@@ -211,12 +213,16 @@
         });
 
         return {
-            showSearchArea: () => {
-                searchArea.style.display = "flex";
+            showSearchArea: (mode) => {
+                searchMode = mode;
+                searchModeName.textContent = STATE[mode].name;
                 isShow = true;
+                searchArea.style.display = "flex";
             },
             hideSearchArea: () => {
                 searchArea.style.display = "none";
+                searchMode = null;
+                searchModeName.textContent = "";
                 isShow = false;
             },
             isShowSearchArea: () => {
@@ -340,7 +346,6 @@
 
         switch (type) {
             case "error":
-                console.error("WORKERエラー：", result.errorMessage);
                 if (result.errorType === "INIT_FAILED")
                     loadingEl.textContent = "アプリケーションの初期化に失敗しました";
                 break;
@@ -392,6 +397,9 @@
                 break;
             case "searchSentences_result":
                 updateItems(MODE.SENTENCE_EXAMPLE, result.items);
+                break;
+            case "searchWords_result":
+                updateItems(result.type, result.items);
                 break;
         }
     };
@@ -451,6 +459,7 @@
     const KeyupCommands = {
         [MODE.NOUN_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
+            q: (e) => showSearchArea(MODE.NOUN_FAVORITE),
             f: (e, row) => {
                 const isDeleted = STATE[MODE.NOUN_FAVORITE].deleteds.has(STATE[MODE.NOUN_FAVORITE].index);
                 postMessageWithFlag({
@@ -461,6 +470,7 @@
         },
         [MODE.VERB_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
+            q: (e) => showSearchArea(MODE.VERB_FAVORITE),
             f: (e, row) => {
                 const isDeleted = STATE[MODE.VERB_FAVORITE].deleteds.has(STATE[MODE.VERB_FAVORITE].index);
                 postMessageWithFlag({
@@ -481,7 +491,7 @@
         },
         [MODE.SENTENCE_EXAMPLE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_EXAMPLE } }),
-            q: (e) => showSearchArea(),
+            q: (e) => showSearchArea(MODE.SENTENCE_EXAMPLE),
             f: (e, row) => {
                 if (!row) return;
                 postMessageWithFlag({
@@ -545,6 +555,8 @@
             return;
         }
 
+        const cm = getMode();
+
         if (isShowSearchArea()) {
             if (isFocusSearchInput()) return;
             if (e.key === "Escape") {
@@ -554,7 +566,13 @@
                 const word = getInputSearchValue();
                 if (word === "") return;
                 e.preventDefault();
-                postMessageWithFlag({ action: "searchSentences", payload: { word } });
+                if (cm === MODE.NOUN_FAVORITE) {
+                    postMessageWithFlag({ action: "searchWords", payload: { type: "noun", word } });
+                } else if (cm === MODE.VERB_FAVORITE) {
+                    postMessageWithFlag({ action: "searchWords", payload: { type: "verb", word } });
+                } else if (cm === MODE.SENTENCE_EXAMPLE) {
+                    postMessageWithFlag({ action: "searchSentences", payload: { word } });
+                }
                 exitSearchArea();
             }
             return;
@@ -569,7 +587,6 @@
         let normalizedKey = e.key;
         if (normalizedKey.toLowerCase() === "f") normalizedKey = "f";
 
-        const cm = getMode();
         const command = KeyupCommands[cm] && KeyupCommands[cm][normalizedKey];
         if (command) {
             e.preventDefault();

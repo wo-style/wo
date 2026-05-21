@@ -58,6 +58,10 @@ const dbMethods = {
         );
         return { type: "searchSentences_result", items };
     },
+    searchWords: (db, { type, word }) => {
+        const items = db.selectArrays(`SELECT word FROM ${type} WHERE word LIKE ? ORDER BY ROWID DESC`, [`%${word}%`]);
+        return { type: `${type}_favorite`, items };
+    },
     saveSentence: (db, { noun, verb }) => {
         db.exec("INSERT OR IGNORE INTO sentence (noun, verb) VALUES (?, ?)", {
             bind: [noun, verb],
@@ -130,7 +134,7 @@ dbMethods.init = (db, { limit } = {}) => {
     };
 };
 
-const downloadDbToOpfs = async (root, filename, dburl) => {
+const loadDbToOpfs = async (root, filename, dburl) => {
     console.log("データベースをダウンロードします...");
     await root.removeEntry(filename).catch(() => null);
     const response = await fetch(dburl, { cache: "no-store" });
@@ -157,6 +161,9 @@ const downloadDbToOpfs = async (root, filename, dburl) => {
         accessHandle.flush();
         console.log("データベースのダウンロードに成功しました");
         console.log("データベースをOPFSに保存しました");
+    } catch (e) {
+        await root.removeEntry(filename).catch(() => null);
+        throw e;
     } finally {
         accessHandle.close();
     }
@@ -207,7 +214,7 @@ const restoreFavorites = (db, backup) => {
         console.log("お気に入りデータの復元に成功しました");
     } catch (e) {
         db.exec("ROLLBACK;");
-        console.error("お気に入りデータの復元に失敗しました:", e);
+        throw e;
     }
 };
 
@@ -222,25 +229,29 @@ const start = async (sqlite3) => {
         const fileHandle = await root.getFileHandle(filename).catch(() => null);
         if (!fileHandle) {
             console.log("OPFSにデータベースは存在しませんでした");
-            await downloadDbToOpfs(root, filename, dburl);
+            await loadDbToOpfs(root, filename, dburl);
         } else {
-            const tempDb = new sqlite3.oo1.OpfsDb("/" + filename);
-            const userVersion = tempDb.selectValue("PRAGMA user_version");
-            console.log(`データベースのバージョンは ${userVersion} です`);
+            try {
+                const tempDb = new sqlite3.oo1.OpfsDb("/" + filename);
+                const userVersion = tempDb.selectValue("PRAGMA user_version");
+                console.log(`データベースのバージョンは ${userVersion} です`);
+                tempDb.close();
 
-            tempDb.close();
+                if (userVersion < CURRENT_DB_VERSION) {
+                    console.log(`データベースを ${CURRENT_DB_VERSION} にバージョンアップします...`);
+                    const oldDb = new sqlite3.oo1.OpfsDb("/" + filename);
+                    const backupData = backupFavorites(oldDb);
+                    oldDb.close();
 
-            if (userVersion < CURRENT_DB_VERSION) {
-                console.log(`データベースを ${CURRENT_DB_VERSION} にバージョンアップします...`);
-                const oldDb = new sqlite3.oo1.OpfsDb("/" + filename);
-                const backupData = backupFavorites(oldDb);
-                oldDb.close();
+                    await loadDbToOpfs(root, filename, dburl);
 
-                await downloadDbToOpfs(root, filename, dburl);
-
-                const newDb = new sqlite3.oo1.OpfsDb("/" + filename);
-                restoreFavorites(newDb, backupData);
-                newDb.close();
+                    const newDb = new sqlite3.oo1.OpfsDb("/" + filename);
+                    restoreFavorites(newDb, backupData);
+                    newDb.close();
+                }
+            } catch (e) {
+                await root.removeEntry(filename).catch(() => null);
+                throw e;
             }
         }
 
@@ -255,28 +266,25 @@ const start = async (sqlite3) => {
         console.log("OPFSに接続しました");
         postMessage({ type: "ready" });
     } catch (err) {
-        console.error("Workerでエラーが発生しました：", err.message);
+        console.error("データベースの準備に失敗しました：", err.message);
         postMessage({ type: "error", result: { errorMessage: err.message, errorType: "INIT_FAILED" } });
     }
 };
 
 self.onmessage = async (e) => {
     const { action, payload } = e.data;
-    if (!dbInstance) {
-        postMessage({
-            type: "error",
-            result: { errorMessage: "まだデータベースの初期化前です", errorType: "DB_FAILED" },
-        });
-        return;
-    }
-    const method = dbMethods[action];
-    if (method) {
-        try {
+    try {
+        if (!dbInstance) {
+            throw new Error("まだデータベースの準備ができていません");
+        }
+        const method = dbMethods[action];
+        if (method) {
             const result = method(dbInstance, payload);
             postMessage({ type: `${action}_result`, result });
-        } catch (err) {
-            postMessage({ type: "error", result: { errorMessage: err.message, errorType: "QUERY_FAILED" } });
         }
+    } catch (err) {
+        console.error("データベースの操作に失敗しました：", err.message);
+        postMessage({ type: "error", result: { errorMessage: err.message, errorType: "QUERY_FAILED" } });
     }
 };
 
