@@ -43,13 +43,18 @@
         return listLengthLimit;
     })();
 
+    const LIST_ELEMENTS = {};
     Object.values(MODE).forEach((mode) => {
-        const list = document.getElementById(mode + "-list");
+        const ul = document.getElementById(mode + "-list");
+        const span = document.getElementById(mode + "-title").querySelector("span");
+        const lists = [];
         for (let i = 0; i < LIST_LENGTH_LIMIT; i++) {
             const li = document.createElement("li");
             li.style.display = "none";
-            list.appendChild(li);
+            ul.appendChild(li);
+            lists.push(li);
         }
+        LIST_ELEMENTS[mode] = { ul, lists, span, count: -1 };
     });
 
     const { getMode, setMode, nextMode, prevMode } = (() => {
@@ -260,8 +265,12 @@
 
     const renderList = (mode) => {
         const state = STATE[mode];
-        const titleSpan = document.getElementById(mode + "-title").querySelector("span");
-        if (titleSpan) titleSpan.textContent = "(" + state.items.length + ")";
+        const cache = LIST_ELEMENTS[mode];
+
+        if (cache.span && cache.count !== state.items.length) {
+            cache.span.textContent = "(" + state.items.length + ")";
+            cache.count = state.items.length;
+        }
 
         if (state.index >= state.offset + LIST_LENGTH_LIMIT) {
             state.offset = state.index - LIST_LENGTH_LIMIT + 1;
@@ -269,10 +278,9 @@
             state.offset = state.index;
         }
 
-        const ul = document.getElementById(mode + "-list");
-        const lists = ul.getElementsByTagName("li");
-
         const displayCount = Math.min(state.items.length - state.offset, LIST_LENGTH_LIMIT);
+
+        const lists = cache.lists;
 
         for (let i = 0; i < LIST_LENGTH_LIMIT; i++) {
             const li = lists[i];
