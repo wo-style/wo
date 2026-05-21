@@ -249,8 +249,19 @@
         };
     })();
 
+    const updateItems = (mode, items) => {
+        STATE[mode].items = items;
+        STATE[mode].index = 0;
+        STATE[mode].offset = 0;
+        STATE[mode].deleteds = new Set();
+        renderList(mode);
+        console.log("「" + STATE[mode].name + "」を更新しました");
+    };
+
     const renderList = (mode) => {
         const state = STATE[mode];
+        const titleSpan = document.getElementById(mode + "-title").querySelector("span");
+        if (titleSpan) titleSpan.textContent = "(" + state.items.length + ")";
 
         if (state.index >= state.offset + LIST_LENGTH_LIMIT) {
             state.offset = state.index - LIST_LENGTH_LIMIT + 1;
@@ -270,31 +281,12 @@
                 const row = state.items[itemIndex];
                 li.textContent = row[0] + (row[1] ? " を " + row[1] : "");
                 li.style.display = "block";
-
-                if (itemIndex === state.index) {
-                    li.classList.add("selected");
-                } else {
-                    li.classList.remove("selected");
-                }
-
-                if (state.deleteds.has(itemIndex)) {
-                    li.classList.add("deleted");
-                } else {
-                    li.classList.remove("deleted");
-                }
+                li.classList.toggle("deleted", state.deleteds.has(itemIndex));
+                li.classList.toggle("selected", itemIndex === state.index);
             } else {
                 li.style.display = "none";
             }
         }
-    };
-
-    const updateItems = (mode, items) => {
-        STATE[mode].items = items;
-        STATE[mode].index = 0;
-        STATE[mode].offset = 0;
-        STATE[mode].deleteds = new Set();
-        renderList(mode);
-        console.log("「" + STATE[mode].name + "」を更新しました");
     };
 
     const updateDeletedItem = ({ type, data }) => {
@@ -461,6 +453,7 @@
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
             q: (e) => showSearchArea(MODE.NOUN_FAVORITE),
             f: (e, row) => {
+                if (!row) return;
                 const isDeleted = STATE[MODE.NOUN_FAVORITE].deleteds.has(STATE[MODE.NOUN_FAVORITE].index);
                 postMessageWithFlag({
                     action: isDeleted ? "saveWord" : "deleteWord",
@@ -472,6 +465,7 @@
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
             q: (e) => showSearchArea(MODE.VERB_FAVORITE),
             f: (e, row) => {
+                if (!row) return;
                 const isDeleted = STATE[MODE.VERB_FAVORITE].deleteds.has(STATE[MODE.VERB_FAVORITE].index);
                 postMessageWithFlag({
                     action: isDeleted ? "saveWord" : "deleteWord",
@@ -482,6 +476,7 @@
         [MODE.SENTENCE_FAVORITE]: {
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_FAVORITE } }),
             f: (e, row) => {
+                if (!row) return;
                 const isDeleted = STATE[MODE.SENTENCE_FAVORITE].deleteds.has(STATE[MODE.SENTENCE_FAVORITE].index);
                 postMessageWithFlag({
                     action: isDeleted ? "saveSentence" : "deleteSentence",
@@ -501,11 +496,13 @@
             },
         },
         [MODE.GENERATE]: {
-            f: (e, row) =>
+            f: (e, row) => {
+                if (!row) return;
                 postMessageWithFlag({
                     action: "saveSentence",
                     payload: { noun: row[0], verb: row[1] },
-                }),
+                });
+            },
             z: (e) => postMessageWithFlag({ action: "generateSentencesWithRandomByExamples" }),
             x: (e) => {
                 const nounFavoriteItems = STATE[MODE.NOUN_FAVORITE].items;
