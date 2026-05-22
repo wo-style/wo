@@ -292,15 +292,13 @@
             state.offset = state.index;
         }
 
-        const displayCount = Math.min(state.items.length - state.offset, LIST_LENGTH_LIMIT);
-
         const lists = cache.lists;
 
         for (let i = 0; i < LIST_LENGTH_LIMIT; i++) {
             const li = lists[i];
-            if (i < displayCount) {
-                const itemIndex = state.offset + i;
-                const row = state.items[itemIndex];
+            const itemIndex = state.offset + i;
+            const row = state.items[itemIndex];
+            if (row) {
                 li.textContent = row[0] + (row[1] ? " を " + row[1] : "");
                 li.style.display = "block";
                 li.classList.toggle("deleted", state.deleteds.has(itemIndex));
@@ -420,14 +418,14 @@
 
     const KeydownCommands = {
         REGISTER: {
-            Enter: (e) => {
+            enter: (e) => {
                 if (e.isComposing) return;
                 e.preventDefault();
                 focusRegisterInput();
             },
         },
         SEARCH: {
-            Enter: (e) => {
+            enter: (e) => {
                 if (e.isComposing) return;
                 e.preventDefault();
                 focusSearchInput();
@@ -569,7 +567,7 @@
         REGISTER: {
             escape: (e) => {
                 e.preventDefault();
-                hideRegisterArea();
+                exitRegisterArea();
             },
             f: (e) => {
                 if (isFocusRegisterInput()) return;
@@ -586,7 +584,10 @@
             },
         },
         SEARCH: {
-            escape: (e) => exitSearchArea(),
+            escape: (e) => {
+                e.preventDefault();
+                exitSearchArea();
+            },
             f: (e) => {
                 if (isFocusSearchInput()) return;
                 const word = getInputSearchValue();
