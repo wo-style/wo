@@ -99,6 +99,20 @@
         };
     })();
 
+    const getModeType = (detail = false) => {
+        if (isRegisterMode()) {
+            return "REGISTER";
+        } else if (isSearchMode()) {
+            return "SEARCH";
+        } else {
+            if (detail) {
+                return getMode();
+            } else {
+                return "MAIN";
+            }
+        }
+    };
+
     const escapeHTML = (str) => {
         if (!str) return "";
         return str
@@ -112,7 +126,7 @@
     const {
         showRegisterArea,
         hideRegisterArea,
-        isShowRegisterArea,
+        isRegisterMode,
         isFocusRegisterInput,
         focusRegisterInput,
         getInputNounValue,
@@ -155,7 +169,7 @@
                 registerArea.style.display = "none";
                 isShow = false;
             },
-            isShowRegisterArea: () => {
+            isRegisterMode: () => {
                 return isShow;
             },
             isFocusRegisterInput: () => {
@@ -188,7 +202,7 @@
     const {
         showSearchArea,
         hideSearchArea,
-        isShowSearchArea,
+        isSearchMode,
         isFocusSearchInput,
         focusSearchInput,
         getInputSearchValue,
@@ -230,7 +244,7 @@
                 searchModeName.textContent = "";
                 isShow = false;
             },
-            isShowSearchArea: () => {
+            isSearchMode: () => {
                 return isShow;
             },
             isFocusSearchInput: () => {
@@ -405,59 +419,60 @@
     };
 
     const KeydownCommands = {
-        w: (cm) => {
-            const state = STATE[cm];
-            if (state.items.length === 0) return;
-            const targetIndex = Math.max(0, state.index - 1);
-            if (targetIndex !== state.index) {
-                state.index = targetIndex;
-                renderList(cm);
-            }
+        REGISTER: {
+            Enter: (e) => {
+                if (e.isComposing) return;
+                e.preventDefault();
+                focusRegisterInput();
+            },
         },
-        s: (cm) => {
-            const state = STATE[cm];
-            if (state.items.length === 0) return;
-            const targetIndex = Math.min(state.index + 1, state.items.length - 1);
-            if (targetIndex !== state.index) {
-                state.index = targetIndex;
-                renderList(cm);
-            }
+        SEARCH: {
+            Enter: (e) => {
+                if (e.isComposing) return;
+                e.preventDefault();
+                focusSearchInput();
+            },
         },
-        a: () => prevMode(),
-        d: () => nextMode(),
+        MAIN: {
+            w: (e, cm) => {
+                const state = STATE[cm];
+                if (state.items.length === 0) return;
+                const targetIndex = Math.max(0, state.index - 1);
+                if (targetIndex !== state.index) {
+                    state.index = targetIndex;
+                    renderList(cm);
+                }
+            },
+            s: (e, cm) => {
+                const state = STATE[cm];
+                if (state.items.length === 0) return;
+                const targetIndex = Math.min(state.index + 1, state.items.length - 1);
+                if (targetIndex !== state.index) {
+                    state.index = targetIndex;
+                    renderList(cm);
+                }
+            },
+            a: () => prevMode(),
+            d: () => nextMode(),
+        },
     };
 
     window.addEventListener("keydown", (e) => {
         if (!isAppReady || isWorking) return;
-
-        if (isShowRegisterArea()) {
-            if (e.key === "Enter") {
-                if (e.isComposing) return;
-                e.preventDefault();
-                focusRegisterInput();
-            }
-            return;
-        }
-
-        if (isShowSearchArea()) {
-            if (e.key === "Enter") {
-                if (e.isComposing) return;
-                e.preventDefault();
-                focusSearchInput();
-            }
-            return;
-        }
-
         const cm = getMode();
-        const command = KeydownCommands[e.key.toLowerCase()];
-        if (command) {
-            e.preventDefault();
-            command(cm);
-        }
+        const cmt = getModeType(false);
+        const commands = KeydownCommands[cmt];
+        const key = e.key.toLowerCase();
+        const command = commands[key];
+        if (command) command(e, cm);
     });
 
     const KeyupCommands = {
         [MODE.NOUN_FAVORITE]: {
+            r: (e) => {
+                e.preventDefault();
+                showRegisterArea();
+            },
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.NOUN_FAVORITE } }),
             q: (e) => showSearchArea(MODE.NOUN_FAVORITE),
             f: (e, row) => {
@@ -470,6 +485,10 @@
             },
         },
         [MODE.VERB_FAVORITE]: {
+            r: (e) => {
+                e.preventDefault();
+                showRegisterArea();
+            },
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.VERB_FAVORITE } }),
             q: (e) => showSearchArea(MODE.VERB_FAVORITE),
             f: (e, row) => {
@@ -482,6 +501,10 @@
             },
         },
         [MODE.SENTENCE_FAVORITE]: {
+            r: (e) => {
+                e.preventDefault();
+                showRegisterArea();
+            },
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_FAVORITE } }),
             f: (e, row) => {
                 if (!row) return;
@@ -493,6 +516,10 @@
             },
         },
         [MODE.SENTENCE_EXAMPLE]: {
+            r: (e) => {
+                e.preventDefault();
+                showRegisterArea();
+            },
             " ": () => postMessageWithFlag({ action: "getItems", payload: { type: MODE.SENTENCE_EXAMPLE } }),
             q: (e) => showSearchArea(MODE.SENTENCE_EXAMPLE),
             f: (e, row) => {
@@ -504,6 +531,10 @@
             },
         },
         [MODE.GENERATE]: {
+            r: (e) => {
+                e.preventDefault();
+                showRegisterArea();
+            },
             f: (e, row) => {
                 if (!row) return;
                 postMessageWithFlag({
@@ -535,17 +566,13 @@
                 });
             },
         },
-    };
-
-    window.addEventListener("keyup", (e) => {
-        if (!isAppReady || isWorking) return;
-
-        if (isShowRegisterArea()) {
-            if (isFocusRegisterInput()) return;
-            if (e.key === "Escape") {
+        REGISTER: {
+            escape: (e) => {
                 e.preventDefault();
                 hideRegisterArea();
-            } else if (e.key === "f") {
+            },
+            f: (e) => {
+                if (isFocusRegisterInput()) return;
                 const noun = getInputNounValue();
                 const verb = getInputVerbValue();
                 if (noun === "" && verb === "") return;
@@ -556,21 +583,16 @@
                 else if (noun && !verb)
                     postMessageWithFlag({ action: "saveWord", payload: { type: "noun", word: noun } });
                 exitRegisterArea();
-            }
-            return;
-        }
-
-        const cm = getMode();
-
-        if (isShowSearchArea()) {
-            if (isFocusSearchInput()) return;
-            if (e.key === "Escape") {
-                e.preventDefault();
-                hideSearchArea();
-            } else if (e.key === "f") {
+            },
+        },
+        SEARCH: {
+            escape: (e) => exitSearchArea(),
+            f: (e) => {
+                if (isFocusSearchInput()) return;
                 const word = getInputSearchValue();
                 if (word === "") return;
                 e.preventDefault();
+                const cm = getMode();
                 if (cm === MODE.NOUN_FAVORITE) {
                     postMessageWithFlag({ action: "searchWords", payload: { type: "noun", word } });
                 } else if (cm === MODE.VERB_FAVORITE) {
@@ -579,24 +601,20 @@
                     postMessageWithFlag({ action: "searchSentences", payload: { word } });
                 }
                 exitSearchArea();
-            }
-            return;
-        }
+            },
+        },
+    };
 
-        if (e.key === "r") {
-            e.preventDefault();
-            showRegisterArea();
-            return;
-        }
-
-        let normalizedKey = e.key;
-        if (normalizedKey.toLowerCase() === "f") normalizedKey = "f";
-
-        const command = KeyupCommands[cm] && KeyupCommands[cm][normalizedKey];
+    window.addEventListener("keyup", (e) => {
+        if (!isAppReady || isWorking) return;
+        const cm = getModeType(true);
+        const commands = KeyupCommands[cm];
+        const key = e.key.toLowerCase();
+        const command = commands[key];
         if (command) {
             e.preventDefault();
-            const { items, index } = STATE[cm];
-            command(e, items[index]);
+            const { items, index } = STATE[cm] || {};
+            command(e, items ? items[index] : null);
         }
     });
 })();
