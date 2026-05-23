@@ -1,6 +1,16 @@
 (() => {
     const loadingEl = document.getElementById("loading");
 
+    const statusEl = document.getElementById("status");
+    const setStatus = (msg, type = null) => {
+        if (type === null) {
+            statusEl.style.color = "";
+        } else if (type === "error") {
+            statusEl.style.color = "red";
+        }
+        statusEl.textContent = msg;
+    };
+
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         loadingEl.textContent = "※このページはPC専用です";
         return;
@@ -86,6 +96,7 @@
                         dl.style.display = "none";
                     }
                 });
+                setStatus(`「${STATE[mode].name}」モードに変更しました`);
                 console.log(`「${STATE[mode].name}」モードに変更しました`);
             },
             nextMode: () => {
@@ -317,6 +328,7 @@
             renderList(type);
         }
         const word = data[0] + (data[1] ? " を " + data[1] : "");
+        setStatus("「" + word + "」を削除しました");
         console.log("「" + word + "」を削除しました");
     };
 
@@ -334,6 +346,7 @@
         }
         renderList(type);
         const word = data[0] + (data[1] ? " を " + data[1] : "");
+        setStatus("「" + word + "」を保存しました");
         console.log("「" + word + "」を保存しました");
     };
 
@@ -382,6 +395,8 @@
                 loadingEl.remove();
                 document.getElementById("app").style.visibility = "visible";
                 console.log("OPFSからデータを読み込みました");
+                setStatus("ようこそ「を研究所」へ");
+
                 isAppReady = true;
                 break;
             }
@@ -401,16 +416,25 @@
                 updateSavedItem({ type: result.type, data: [result.noun, result.verb] });
                 break;
             case "generateSentencesWithRandomByFavorites_result":
+                setStatus("保存した名詞と動詞をランダムに組み合わせて作文しました");
+                updateItems(MODE.GENERATE, result.items);
+                break;
             case "generateSentencesWithRandomByExamples_result":
+                setStatus("例文の名詞と動詞をランダムに組み合わせて作文しました");
                 updateItems(MODE.GENERATE, result.items);
                 break;
             case "generateSentencesWithWordByFavorites_result":
+                setStatus(
+                    `${STATE[result.fixedTable].name}の「${result.fixedWord}」と${STATE[result.targetTable].name}全部で作文しました`,
+                );
                 updateItems(MODE.GENERATE, result.items);
                 break;
             case "searchSentences_result":
+                setStatus(`「${result.word}」を含む例文を検索しました`);
                 updateItems(MODE.SENTENCE_EXAMPLE, result.items);
                 break;
             case "searchWords_result":
+                setStatus(`「${result.word}」を含む${STATE[result.type].name}を検索しました`);
                 updateItems(result.type, result.items);
                 break;
         }
@@ -464,6 +488,8 @@
         const command = commands[key];
         if (command) command(e, cm);
     });
+
+    const SAVE_WORD_LIMIT = 1000;
 
     const KeyupCommands = {
         [MODE.NOUN_FAVORITE]: {
@@ -522,6 +548,12 @@
             q: (e) => showSearchArea(MODE.SENTENCE_EXAMPLE),
             f: (e, row) => {
                 if (!row) return;
+                const isVerb = e.shiftKey;
+                const saveState = isVerb ? STATE[MODE.VERB_FAVORITE] : STATE[MODE.NOUN_FAVORITE];
+                if (saveState.items.length >= SAVE_WORD_LIMIT) {
+                    setStatus(`単語は　${SAVE_WORD_LIMIT}　以上保存できません`, "error");
+                    return;
+                }
                 postMessageWithFlag({
                     action: "saveWord",
                     payload: { type: e.shiftKey ? "verb" : "noun", word: e.shiftKey ? row[1] : row[0] },

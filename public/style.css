@@ -78,6 +78,16 @@ input[type="text"] {
     padding: 4px;
 }
 
+#keys {
+    margin-top: 10px;
+}
+
+#status {
+    margin-left: 5px;
+    font-size: 0.8rem;
+    color: var(--wo-selected);
+}
+
 header {
     height: 70px;
     display: flex;
@@ -86,8 +96,8 @@ header {
 }
 
 h1 {
+    display: inline-block;
     font-size: 1.5rem;
-    margin-bottom: 10px;
 }
 
 dl {

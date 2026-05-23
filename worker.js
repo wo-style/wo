@@ -56,11 +56,11 @@ const dbMethods = {
         `,
             [`%${word}%`, `%${word}%`],
         );
-        return { type: "searchSentences_result", items };
+        return { type: "sentence_example", word, items };
     },
     searchWords: (db, { type, word }) => {
         const items = db.selectArrays(`SELECT word FROM ${type} WHERE word LIKE ? ORDER BY ROWID DESC`, [`%${word}%`]);
-        return { type: `${type}_favorite`, items };
+        return { type: `${type}_favorite`, word, items };
     },
     saveSentence: (db, { noun, verb }) => {
         db.exec("INSERT OR IGNORE INTO sentence (noun, verb) VALUES (?, ?)", {
@@ -114,7 +114,7 @@ const dbMethods = {
             `SELECT ${isFixedNoun ? `?, ${rotateColumn}` : `${rotateColumn}, ?`} FROM (${rotateQuery})`,
             [fixedWord],
         );
-        return { items, fixedTable, targetTable, fixedWord };
+        return { items, fixedTable: `${fixedTable}_favorite`, fixedWord, targetTable: `${targetTable}_favorite` };
     },
 };
 
