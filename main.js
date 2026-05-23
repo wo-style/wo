@@ -328,8 +328,8 @@
             renderList(type);
         }
         const word = data[0] + (data[1] ? " を " + data[1] : "");
-        setStatus("「" + word + "」を削除しました");
-        console.log("「" + word + "」を削除しました");
+        setStatus(`「${word}」を${state.name}から削除しました`);
+        console.log(`「${word}」を${state.name}から削除しました`);
     };
 
     const updateSavedItem = ({ type, data }) => {
@@ -346,8 +346,8 @@
         }
         renderList(type);
         const word = data[0] + (data[1] ? " を " + data[1] : "");
-        setStatus("「" + word + "」を保存しました");
-        console.log("「" + word + "」を保存しました");
+        setStatus(`「${word}」を${state.name}に保存しました`);
+        console.log(`「${word}」を${state.name}}に保存しました`);
     };
 
     let isWorking = true;
