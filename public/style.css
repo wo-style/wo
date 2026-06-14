@@ -98,16 +98,15 @@ input[type="text"] {
     color: var(--wo-selected);
 }
 
-header > div {
-    text-overflow: clip;
-}
-
 header {
-    height: 50px; /* 端数は main.js が remainder ぶん加算する */
+    height: 50px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    text-overflow: clip;
+    gap: 8px;
 }
 
 h1 {
