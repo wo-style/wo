@@ -1,13 +1,13 @@
 (() => {
     const loadingEl = document.getElementById("loading");
 
-    // if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-    //     loadingEl.textContent = "※このページはPC専用です";
-    //     return;
-    // }
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+        loadingEl.textContent = "※このページはPC専用です";
+        return;
+    }
 
     if (!navigator.storage || !navigator.storage.getDirectory) {
-        loadingEl.textContent = "※このブラウザはOPFSをサポートしていません。最新のブラウザを使用してください。";
+        loadingEl.textContent = "※最新のブラウザを使用してください";
         return;
     }
 
@@ -49,8 +49,6 @@
         [MODE.GENERATE]: createState("作文"),
     };
 
-    // #app の高さは 100dvh 可変。main の実高さから表示行数を算出し、
-    // 端数(remainder)は header に足して main を行数ぴったりに揃える。
     const LIST_LENGTH_LIMIT = (() => {
         const mainEl = document.querySelector("main");
         const headerEl = document.querySelector("header");
