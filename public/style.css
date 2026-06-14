@@ -159,7 +159,7 @@ nav > h2.selected {
 }
 
 main {
-    height: calc(100% - 150px); /* header50 + nav30 + footer70。main.js が行数ぴったりに再調整 */
+    height: calc(100% - 160px); /* header50 + nav30 + footer80。main.js が行数ぴったりに再調整 */
     flex-shrink: 0;
     display: flex;
     border: 1px solid var(--wo-text);
@@ -203,7 +203,7 @@ footer {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 70px;
+    height: 80px;
     gap: 8px;
 }
 
