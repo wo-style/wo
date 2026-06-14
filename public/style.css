@@ -45,11 +45,14 @@
 
 html {
     height: 100%;
-    font-size: 14px;
+    font-size: 19px;
 }
 
 body {
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: "DotGothic16", sans-serif;
     font-size: 1rem;
     color: var(--wo-text);
@@ -74,8 +77,12 @@ input[type="text"] {
 
 #app {
     visibility: hidden;
-    height: 100%;
-    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    height: 700px; /* 160 + 27 × 20行 */
+    margin: 0 auto;
+    padding: 6px;
 }
 
 #keys {
@@ -84,12 +91,17 @@ input[type="text"] {
 
 #status {
     margin-left: 5px;
-    font-size: 0.8rem;
+    font-size: 14px;
     color: var(--wo-selected);
 }
 
+header > div {
+    text-overflow: clip;
+}
+
 header {
-    height: 70px;
+    height: 47px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -98,10 +110,6 @@ header {
 h1 {
     display: inline-block;
     font-size: 1.5rem;
-}
-
-dl {
-    font-size: 0.9rem;
 }
 
 dt {
@@ -113,11 +121,11 @@ dt {
     vertical-align: middle;
     min-width: 22px;
     text-align: center;
+    font-size: 12px;
 }
 
 dd {
     display: inline-block;
-    margin-left: 2px;
     margin-right: 8px;
     margin-bottom: 2px;
     vertical-align: middle;
@@ -125,8 +133,10 @@ dd {
 
 nav {
     height: 30px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
+    border: 1px solid var(--wo-text);
 }
 
 nav > h2 {
@@ -136,28 +146,24 @@ nav > h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 1px solid var(--wo-text);
+    border-right: 1px solid var(--wo-text);
 }
 
-nav > h2 + h2 {
-    border-left: none;
-}
-
-nav > h2[id*="sentence"],
-nav > h2[id*="generate"] {
-    flex: 2;
+nav > h2:last-child {
+    border: none;
 }
 
 nav > h2.selected {
     background-color: var(--wo-selected);
     color: var(--wo-bg);
-    border-bottom: 1px solid var(--wo-bg);
 }
 
 main {
-    height: calc(100% - 170px);
+    height: 541px; /* 内側 540px = 20行 × 27px + 下border 1px */
+    flex-shrink: 0;
     display: flex;
-    border-bottom: 1px solid var(--wo-text);
+    border: 1px solid var(--wo-text);
+    border-top: none;
 }
 
 main > ul {
@@ -167,8 +173,6 @@ main > ul {
     overflow-y: scroll;
     -ms-overflow-style: none;
     scrollbar-width: none;
-    border-left: 1px solid var(--wo-text);
-    border-right: 1px solid var(--wo-text);
 }
 
 main > ul + ul {
@@ -194,12 +198,13 @@ main > ul > li.selected {
 }
 
 footer {
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 70px;
-    gap: 5px;
+    gap: 8px;
 }
 
 footer a {
@@ -222,7 +227,7 @@ footer a {
     height: 100%;
     color: var(--wo-bg);
     background-color: var(--wo-input-bg);
-    font-size: 1.5rem;
+    font-size: 1rem;
 }
 
 .input-area h2 {
@@ -237,7 +242,7 @@ footer a {
 }
 
 .input-area input[type="text"] {
-    width: 250px;
+    width: 180px;
     color: var(--wo-text);
     background-color: var(--wo-bg);
     padding: 8px;

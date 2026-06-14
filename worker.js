@@ -1,10 +1,16 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 
-const CURRENT_DB_VERSION = 5;
+const CURRENT_DB_VERSION = 6;
+
+const selectPaged = (db, sql, params, page, limit) => {
+    const offset = (page || 0) * limit;
+    const rows = db.selectArrays(`${sql} LIMIT ? OFFSET ?`, [...params, limit + 1, offset]);
+    const hasNext = rows.length > limit;
+    return { items: hasNext ? rows.slice(0, limit) : rows, hasNext };
+};
 
 const dbMethods = {
-    getItems: (db, { type, limit } = {}) => {
-        let items;
+    getItems: (db, { type, limit, page } = {}) => {
         switch (type) {
             case "sentence_example": {
                 const maxId = db.selectValue("SELECT MAX(id) FROM verb_example");
@@ -14,7 +20,7 @@ const dbMethods = {
                 }
                 const randomVerbIds = Array.from(uniqueIds);
                 const placeholders = randomVerbIds.map(() => "?").join(",");
-                items = db.selectArrays(
+                const items = db.selectArrays(
                     `
                     WITH target_pairs AS (
                         SELECT verb_id, noun_id,
@@ -30,37 +36,89 @@ const dbMethods = {
                     `,
                     randomVerbIds,
                 );
-                break;
+                return { type, items };
             }
-            case "noun_favorite":
-                items = db.selectArrays("SELECT word FROM noun ORDER BY ROWID DESC");
-                break;
-            case "verb_favorite":
-                items = db.selectArrays("SELECT word FROM verb ORDER BY ROWID DESC");
-                break;
-            case "sentence_favorite":
-                items = db.selectArrays("SELECT noun, verb FROM sentence ORDER BY ROWID DESC");
-                break;
+            case "noun_favorite": {
+                const { items, hasNext } = selectPaged(
+                    db,
+                    "SELECT word FROM noun ORDER BY ROWID DESC",
+                    [],
+                    page,
+                    limit,
+                );
+                return { type, items, page: page || 0, hasNext };
+            }
+            case "verb_favorite": {
+                const { items, hasNext } = selectPaged(
+                    db,
+                    "SELECT word FROM verb ORDER BY ROWID DESC",
+                    [],
+                    page,
+                    limit,
+                );
+                return { type, items, page: page || 0, hasNext };
+            }
+            case "sentence_favorite": {
+                const { items, hasNext } = selectPaged(
+                    db,
+                    "SELECT noun, verb FROM sentence ORDER BY ROWID DESC",
+                    [],
+                    page,
+                    limit,
+                );
+                return { type, items, page: page || 0, hasNext };
+            }
         }
-        return { type, items };
     },
-    searchSentences: (db, { word }) => {
-        const items = db.selectArrays(
-            `
-            SELECT ne.word, ve.word
-            FROM sentence_example se
-            JOIN noun_example ne ON se.noun_id = ne.id
-            JOIN verb_example ve ON se.verb_id = ve.id
-            WHERE ne.word LIKE ? OR ve.word LIKE ?
-            ORDER BY se.count DESC LIMIT 300
-        `,
-            [`%${word}%`, `%${word}%`],
+    searchSentences: (db, { word, limit, page }) => {
+        const lim = limit || 20;
+        const pg = page || 0;
+        const like = `%${word}%`;
+        const need = (pg + 1) * lim + 1;
+        const fetch = lim + 1;
+
+        const rows = db.exec({
+            sql: `
+                SELECT noun, verb, cnt FROM (
+                    SELECT * FROM (
+                        SELECT ne.word AS noun, ve.word AS verb, se.count AS cnt,
+                               se.noun_id AS nid, se.verb_id AS vid
+                        FROM sentence_example se
+                        JOIN noun_example ne ON se.noun_id = ne.id
+                        JOIN verb_example ve ON se.verb_id = ve.id
+                        WHERE se.noun_id IN (SELECT id FROM noun_example WHERE word LIKE ?)
+                        ORDER BY se.count DESC, se.noun_id, se.verb_id LIMIT ?
+                    )
+                    UNION
+                    SELECT * FROM (
+                        SELECT ne.word, ve.word, se.count, se.noun_id, se.verb_id
+                        FROM sentence_example se
+                        JOIN noun_example ne ON se.noun_id = ne.id
+                        JOIN verb_example ve ON se.verb_id = ve.id
+                        WHERE se.verb_id IN (SELECT id FROM verb_example WHERE word LIKE ?)
+                        ORDER BY se.count DESC, se.noun_id, se.verb_id LIMIT ?
+                    )
+                )
+                ORDER BY cnt DESC, nid, vid LIMIT ? OFFSET ?
+            `,
+            bind: [like, need, like, need, fetch, pg * lim],
+            rowMode: "object",
+            returnValue: "resultRows",
+        });
+
+        const hasNext = rows.length > lim;
+        const items = rows.slice(0, lim).map((r) => [r.noun, r.verb]);
+        return { type: "sentence_example", word, items, page: pg, hasNext };
+    },
+    searchWords: (db, { type, word, limit, page }) => {
+        const { items, hasNext } = selectPaged(
+            db,
+            `SELECT word FROM ${type} WHERE word LIKE ? ORDER BY ROWID DESC`,
+            [`%${word}%`],
+            page,
+            limit,
         );
-        return { type: "sentence_example", word, items };
-    },
-    searchWords: (db, { type, word }) => {
-        const items = db.selectArrays(`SELECT word FROM ${type} WHERE word LIKE ? ORDER BY ROWID DESC`, [`%${word}%`]);
-        return { type: `${type}_favorite`, word, items };
+        return { type: `${type}_favorite`, word, items, page: page || 0, hasNext };
     },
     saveSentence: (db, { noun, verb }) => {
         db.exec("INSERT OR IGNORE INTO sentence (noun, verb) VALUES (?, ?)", {
@@ -106,23 +164,33 @@ const dbMethods = {
         }
         return { items };
     },
-    generateSentencesWithWordByFavorites: (db, { fixedTable, targetTable, fixedWord } = {}) => {
+    generateSentencesWithWordByFavorites: (db, { fixedTable, targetTable, fixedWord, limit, page } = {}) => {
         const isFixedNoun = fixedTable === "noun";
         const rotateColumn = "word";
         const rotateQuery = targetTable === "verb" ? "SELECT word FROM verb" : "SELECT word FROM noun";
-        const items = db.selectArrays(
+        const { items, hasNext } = selectPaged(
+            db,
             `SELECT ${isFixedNoun ? `?, ${rotateColumn}` : `${rotateColumn}, ?`} FROM (${rotateQuery})`,
             [fixedWord],
+            page,
+            limit,
         );
-        return { items, fixedTable: `${fixedTable}_favorite`, fixedWord, targetTable: `${targetTable}_favorite` };
+        return {
+            items,
+            page: page || 0,
+            hasNext,
+            fixedTable: `${fixedTable}_favorite`,
+            fixedWord,
+            targetTable: `${targetTable}_favorite`,
+        };
     },
 };
 
 dbMethods.init = (db, { limit } = {}) => {
     const sentencesExample = dbMethods.getItems(db, { type: "sentence_example", limit });
-    const nounsFavorite = dbMethods.getItems(db, { type: "noun_favorite" });
-    const verbsFavorite = dbMethods.getItems(db, { type: "verb_favorite" });
-    const sentencesFavorite = dbMethods.getItems(db, { type: "sentence_favorite" });
+    const nounsFavorite = dbMethods.getItems(db, { type: "noun_favorite", limit });
+    const verbsFavorite = dbMethods.getItems(db, { type: "verb_favorite", limit });
+    const sentencesFavorite = dbMethods.getItems(db, { type: "sentence_favorite", limit });
     const generateSentences = dbMethods.generateSentencesWithRandomByFavorites(db, { limit });
 
     return {
