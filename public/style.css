@@ -41,7 +41,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    vertical-align: middle;
 }
 
 html {
@@ -206,6 +205,10 @@ footer {
     align-items: center;
     height: 80px;
     gap: 8px;
+}
+
+footer p {
+    overflow: visible;
 }
 
 footer a {
