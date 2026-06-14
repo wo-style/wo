@@ -49,9 +49,23 @@
         [MODE.GENERATE]: createState("作文"),
     };
 
-    // #app は 500×700px 固定。main 内側 540px / item 27px = 20 行ぴったり。
-    const LIST_LENGTH_LIMIT = 20;
-    document.getElementById("dummyLi").remove();
+    // #app の高さは 100dvh 可変。main の実高さから表示行数を算出し、
+    // 端数(remainder)は header に足して main を行数ぴったりに揃える。
+    const LIST_LENGTH_LIMIT = (() => {
+        const mainEl = document.querySelector("main");
+        const headerEl = document.querySelector("header");
+        const dummyLi = document.getElementById("dummyLi");
+        const listHeight = mainEl.clientHeight;
+        const itemHeight = dummyLi.offsetHeight || 24;
+        const listLengthLimit = Math.floor(listHeight / itemHeight);
+        const remainder = listHeight % itemHeight;
+        const headerHeight = headerEl.getBoundingClientRect().height;
+        headerEl.style.height = `${headerHeight + remainder}px`;
+        mainEl.style.height = `${listLengthLimit * itemHeight}px`;
+        dummyLi.remove();
+        console.log(`表示件数を ${listLengthLimit} に設定しました`);
+        return listLengthLimit;
+    })();
 
     const LIST_ELEMENTS = (() => {
         const listElements = {};

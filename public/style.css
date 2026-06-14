@@ -49,7 +49,7 @@ html {
 }
 
 body {
-    height: 100%;
+    height: 100dvh; /* ツールバーを除いた実可視領域に追従 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,8 +79,8 @@ input[type="text"] {
     visibility: hidden;
     display: flex;
     flex-direction: column;
-    width: 500px;
-    height: 700px; /* 160 + 27 × 20行 */
+    width: 500px; /* 基準幅。狭い画面では flex-shrink で縮む */
+    height: 100%; /* body(100dvh) に追従 */
     margin: 0 auto;
     padding: 6px;
 }
@@ -100,7 +100,7 @@ header > div {
 }
 
 header {
-    height: 47px;
+    height: 50px; /* 端数は main.js が remainder ぶん加算する */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -159,7 +159,7 @@ nav > h2.selected {
 }
 
 main {
-    height: 541px; /* 内側 540px = 20行 × 27px + 下border 1px */
+    height: calc(100% - 150px); /* header50 + nav30 + footer70。main.js が行数ぴったりに再調整 */
     flex-shrink: 0;
     display: flex;
     border: 1px solid var(--wo-text);
