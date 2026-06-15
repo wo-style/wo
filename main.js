@@ -335,24 +335,22 @@
             renderList(type);
         }
         const word = data[0] + (data[1] ? " を " + data[1] : "");
-        setStatus(`「${word}」を${state.name}から削除しました`);
-        console.log(`「${word}」を${state.name}から削除しました`);
+        setStatus(`「${word}」を削除しました`);
+        console.log(`「${word}」を$削除しました`);
     };
 
     const updateSavedItem = ({ type, data }) => {
         const state = STATE[type];
         const index = state.items.findIndex((row) => row[0] === data[0] && row[1] === data[1]);
         if (index !== -1) {
-            // 現在ページに表示中（削除の取り消し）→ 取り消し線を外すだけ
             state.deleteds.delete(index);
             renderList(type);
         } else {
-            // 新規保存 → 保存先モードのページ0を取り直して最新を先頭に出す
             postMessageWithFlag({ action: "getItems", payload: { type, page: 0 } });
         }
         const word = data[0] + (data[1] ? " を " + data[1] : "");
-        setStatus(`「${word}」を${state.name}に保存しました`);
-        console.log(`「${word}」を${state.name}に保存しました`);
+        setStatus(`「${word}」を保存しました`);
+        console.log(`「${word}」を保存しました`);
     };
 
     let isWorking = true;
@@ -443,17 +441,15 @@
                 updateSavedItem({ type: result.type, data: [result.noun, result.verb] });
                 break;
             case "generateSentencesWithRandomByFavorites_result":
-                setStatus("保存した名詞と動詞をランダムに組み合わせて作文しました");
+                setStatus("保存した名詞と動詞でランダム作文しました");
                 applyResult(MODE.GENERATE, { items: result.items });
                 break;
             case "generateSentencesWithRandomByExamples_result":
-                setStatus("例文の名詞と動詞をランダムに組み合わせて作文しました");
+                setStatus("例文の名詞と動詞でランダム作文しました");
                 applyResult(MODE.GENERATE, { items: result.items });
                 break;
             case "generateSentencesWithWordByFavorites_result":
-                setStatus(
-                    `${STATE[result.fixedTable].name}の「${result.fixedWord}」と${STATE[result.targetTable].name}全部で作文しました`,
-                );
+                setStatus(`「${result.fixedWord}」と保存した${STATE[result.targetTable].name}で作文しました`);
                 applyResult(MODE.GENERATE, {
                     items: result.items,
                     page: result.page || 0,
